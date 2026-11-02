@@ -18,7 +18,12 @@ export const GET = withHandler(
 
     // Access control:
     // Coach: allowed
+    // Scout: forbidden from direct player endpoints (must use /api/ready)
     // Player: only own record
+    if (session.role === "scout") {
+      throw new AppError("Forbidden: Scouts cannot view player rosters directly", 403);
+    }
+
     if (session.role === "player") {
       if (!player.userId || player.userId.toString() !== session.userId) {
         throw new AppError("Forbidden: Cannot view other players", 403);

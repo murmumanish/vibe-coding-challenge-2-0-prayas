@@ -25,14 +25,12 @@ export function attendancePercent(present: number, total: number): number {
 /**
  * Checks if attendance meets the 75% threshold.
  * 74.9% → false, 75.0% → true.
+ * Uses whole number multiplication (present * 4 >= total * 3) to prevent floating-point rounding errors.
  */
 export function meetsAttendanceThreshold(
   presentCount: number,
   closedSessionCount: number
 ): boolean {
-  const percentage = calculateAttendancePercentage(
-    presentCount,
-    closedSessionCount
-  );
-  return percentage >= 75;
+  if (closedSessionCount <= 0) return false;
+  return presentCount * 4 >= closedSessionCount * 3;
 }

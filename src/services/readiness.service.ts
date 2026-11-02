@@ -84,8 +84,12 @@ export async function getReadinessRoster(
     // 2. Count official match scores for this player
     const matchCount = await MatchScore.countDocuments({ player: player._id });
 
-    // 3. Evaluate domain readiness rule
-    const ready = isReady(attendancePercent, matchCount);
+    // 3. Evaluate domain readiness rule (integer precision: present * 4 >= total * 3)
+    const ready = isReady({
+      presentCount: closedPresent,
+      closedSessionCount: closedTotal,
+      matchCount,
+    });
 
     if (options?.readyOnly && !ready) {
       continue;

@@ -6,10 +6,7 @@ import { createSessionSchema } from "@/lib/validators";
 import { getAllSessions, createSession } from "@/services/session.service";
 
 export const GET = withHandler(async (request: Request) => {
-  const session = await getSession();
-  if (!session) {
-    throw new Error("UNAUTHORIZED");
-  }
+  await requireRole("coach");
 
   const url = new URL(request.url);
   const sportId = url.searchParams.get("sportId") || undefined;

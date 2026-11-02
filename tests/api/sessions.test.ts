@@ -26,15 +26,23 @@ describe("Sessions API Routes", () => {
 
   describe("GET /api/sessions", () => {
     it("returns 401 if unauthenticated", async () => {
-      vi.mocked(auth.getSession).mockResolvedValue(null);
+      vi.mocked(auth.requireRole).mockRejectedValue(new Error("UNAUTHORIZED"));
 
       const request = new Request("http://localhost:3000/api/sessions");
       const res = await getSessions(request);
       expect(res.status).toBe(401);
     });
 
-    it("returns sessions list when authenticated", async () => {
-      vi.mocked(auth.getSession).mockResolvedValue({
+    it("returns 403 if user is a scout", async () => {
+      vi.mocked(auth.requireRole).mockRejectedValue(new Error("FORBIDDEN"));
+
+      const request = new Request("http://localhost:3000/api/sessions");
+      const res = await getSessions(request);
+      expect(res.status).toBe(403);
+    });
+
+    it("returns sessions list when authenticated as coach", async () => {
+      vi.mocked(auth.requireRole).mockResolvedValue({
         userId: "coach-1",
         email: "coach@academy.com",
         role: "coach",

@@ -6,7 +6,7 @@ import { createPlayerSchema } from "@/lib/validators";
 import { getAllPlayers, createPlayer } from "@/services/player.service";
 
 export const GET = withHandler(async (request: Request) => {
-  await requireRole("coach", "scout");
+  await requireRole("coach");
 
   const url = new URL(request.url);
   const sportId = url.searchParams.get("sportId") || undefined;

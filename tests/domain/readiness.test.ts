@@ -73,5 +73,34 @@ describe("Readiness Domain", () => {
         isReady({ presentCount: 0, closedSessionCount: 0, matchCount: 3 })
       ).toBe(false);
     });
+
+    describe("Check 3 Specification Cases (Players D, E, F, G)", () => {
+      // 4 sessions held
+      const HELD = 4;
+
+      it("Player D: 3 of 4 (75%), 2 matches -> Ready (true)", () => {
+        expect(
+          isReady({ presentCount: 3, closedSessionCount: HELD, matchCount: 2 })
+        ).toBe(true);
+      });
+
+      it("Player E: 2 of 4 (50%), 3 matches -> Not Ready (false - attendance too low)", () => {
+        expect(
+          isReady({ presentCount: 2, closedSessionCount: HELD, matchCount: 3 })
+        ).toBe(false);
+      });
+
+      it("Player F: 3 of 4 (75%), 1 match -> Not Ready (false - not enough matches)", () => {
+        expect(
+          isReady({ presentCount: 3, closedSessionCount: HELD, matchCount: 1 })
+        ).toBe(false);
+      });
+
+      it("Player G: 4 of 4 (100%), 0 matches -> Not Ready (false - never played)", () => {
+        expect(
+          isReady({ presentCount: 4, closedSessionCount: HELD, matchCount: 0 })
+        ).toBe(false);
+      });
+    });
   });
 });
