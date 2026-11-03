@@ -272,3 +272,29 @@ export async function closeSession(id: string): Promise<ISession> {
 
   return session;
 }
+
+/**
+ * Updates the dateKey of a session (for testing/corrections).
+ */
+export async function updateSessionDate(sessionId: string, newDateKey: string): Promise<ISession> {
+  await dbConnect();
+
+  const session = await Session.findById(sessionId);
+  if (!session) {
+    throw new AppError("Session not found", 404);
+  }
+
+  const existing = await Session.findOne({
+    _id: { $ne: session._id },
+    sport: session.sport,
+    dateKey: newDateKey,
+  });
+  if (existing) {
+    throw new AppError("A practice session already exists for this sport on that date", 409);
+  }
+
+  session.dateKey = newDateKey;
+  await session.save();
+
+  return session;
+}

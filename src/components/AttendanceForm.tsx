@@ -65,6 +65,39 @@ export function AttendanceForm({
   const [closing, setClosing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [editingDate, setEditingDate] = useState(session.dateKey);
+  const [isEditingDate, setIsEditingDate] = useState(false);
+  const [updatingDate, setUpdatingDate] = useState(false);
+
+  async function handleUpdateSessionDate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingDate || editingDate === session.dateKey) {
+      setIsEditingDate(false);
+      return;
+    }
+    setUpdatingDate(true);
+    setError(null);
+    setSuccessMessage(null);
+    try {
+      const res = await fetch(`/api/sessions/${session._id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dateKey: editingDate }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Failed to update session date");
+        return;
+      }
+      setSession((prev) => ({ ...prev, dateKey: editingDate }));
+      setIsEditingDate(false);
+      setSuccessMessage(`Session date updated to ${formatISTDate(editingDate)}.`);
+    } catch {
+      setError("Network error updating session date.");
+    } finally {
+      setUpdatingDate(false);
+    }
+  }
 
   const isClosed = session.status === "closed" || Boolean(session.closedAt);
 
@@ -231,17 +264,57 @@ export function AttendanceForm({
                 {isClosed ? "Session Closed (Locked)" : "Session Open"}
               </span>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Date:{" "}
-              <span className="font-semibold text-slate-700 dark:text-slate-300">
-                {formatISTDate(session.dateKey)}
-              </span>
-              {session.closedAt && (
-                <span className="ml-2 text-slate-400 dark:text-slate-500">
-                  • Closed at {new Date(session.closedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Date:{" "}
+                <span className="font-semibold text-slate-700 dark:text-slate-300">
+                  {formatISTDate(session.dateKey)}
                 </span>
-              )}
-            </p>
+                {session.closedAt && (
+                  <span className="ml-2 text-slate-400 dark:text-slate-500">
+                    • Closed at {new Date(session.closedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                )}
+              </p>
+              {!isEditingDate ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingDate(session.dateKey);
+                    setIsEditingDate(true);
+                  }}
+                  className="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-[#ADD8E6]/40 dark:bg-[#ADD8E6]/20 text-slate-800 dark:text-slate-200 hover:bg-[#ADD8E6]/70 transition border border-blue-200 dark:border-slate-700"
+                >
+                  Change Date (Test)
+                </button>
+              ) : null}
+            </div>
+
+            {isEditingDate && (
+              <form onSubmit={handleUpdateSessionDate} className="mt-2 flex items-center gap-2 flex-wrap">
+                <input
+                  type="date"
+                  value={editingDate}
+                  onChange={(e) => setEditingDate(e.target.value)}
+                  required
+                  className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#ADD8E6]"
+                />
+                <button
+                  type="submit"
+                  disabled={updatingDate}
+                  className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[#ADD8E6] text-slate-900 hover:bg-[#9cd0e2] border border-[#96cce0] transition disabled:opacity-50"
+                >
+                  {updatingDate ? "Saving..." : "Save"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingDate(false)}
+                  className="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition"
+                >
+                  Cancel
+                </button>
+              </form>
+            )}
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">

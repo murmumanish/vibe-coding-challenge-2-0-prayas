@@ -63,6 +63,7 @@ export function MatchScoreForm({
   initialScores,
   initialEligiblePlayers,
 }: MatchScoreFormProps) {
+  const [currentMatch, setCurrentMatch] = useState(match);
   const [scores, setScores] = useState<MatchScoreItem[]>(initialScores);
   const [eligiblePlayers, setEligiblePlayers] = useState<EligiblePlayerItem[]>(
     initialEligiblePlayers
@@ -81,6 +82,63 @@ export function MatchScoreForm({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  // Testing: Match date editing & session linking
+  const [editingDate, setEditingDate] = useState(match.dateKey);
+  const [isEditingDate, setIsEditingDate] = useState(false);
+  const [updatingDate, setUpdatingDate] = useState(false);
+  const [availableSessions, setAvailableSessions] = useState<
+    Array<{
+      _id: string;
+      dateKey: string;
+      attendanceStats?: { present: number; total: number };
+    }>
+  >([]);
+
+  useEffect(() => {
+    const sportId = match.sport?._id;
+    if (!sportId) return;
+    fetch(`/api/sessions?sportId=${sportId}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.sessions) {
+          setAvailableSessions(data.sessions);
+        }
+      })
+      .catch(() => {});
+  }, [match.sport?._id]);
+
+  async function handleUpdateMatchDate(newDate: string) {
+    if (!newDate) return;
+    setUpdatingDate(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const res = await fetch(`/api/matches/${currentMatch._id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dateKey: newDate }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Failed to update match date");
+        return;
+      }
+      setCurrentMatch((prev) => ({ ...prev, dateKey: newDate }));
+      setEditingDate(newDate);
+      if (data.eligiblePlayers) {
+        setEligiblePlayers(data.eligiblePlayers);
+      }
+      setIsEditingDate(false);
+      setSuccess(
+        `Match date updated to ${formatISTDate(newDate)}. Eligible players reloaded.`
+      );
+    } catch {
+      setError("Network error updating match date.");
+    } finally {
+      setUpdatingDate(false);
+    }
+  }
 
   // Automatically keep selectedPlayerId in sync if the list of unscored players changes
   useEffect(() => {
@@ -120,7 +178,7 @@ export function MatchScoreForm({
     setSubmitting(true);
 
     try {
-      const res = await fetch(`/api/matches/${match._id}/scores`, {
+      const res = await fetch(`/api/matches/${currentMatch._id}/scores`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -193,25 +251,95 @@ export function MatchScoreForm({
                 <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] sm:text-xs font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 shrink-0 self-center">
                   vs
                 </span>
-                <span className="text-left truncate">{match.opponent}</span>
+                <span className="text-left truncate">{currentMatch.opponent}</span>
               </h2>
 
               <span className="self-center sm:self-auto inline-flex rounded-full bg-[#ADD8E6]/30 dark:bg-[#ADD8E6]/15 text-slate-900 dark:text-slate-100 border border-blue-200 dark:border-slate-700 px-2.5 py-0.5 text-xs font-bold w-fit">
-                {match.sport?.name}
+                {currentMatch.sport?.name}
               </span>
             </div>
 
-            <p className="text-xs text-slate-500 dark:text-slate-400 text-center sm:text-left">
-              Date:{" "}
-              <span className="font-semibold text-slate-700 dark:text-slate-300">
-                {formatISTDate(match.dateKey)}
-              </span>
-              {match.location && (
-                <span className="ml-2 font-medium text-slate-600 dark:text-slate-400">
-                  • Venue: {match.location}
+            <div className="flex items-center justify-center sm:justify-start gap-2 mt-1 flex-wrap">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Date:{" "}
+                <span className="font-semibold text-slate-700 dark:text-slate-300">
+                  {formatISTDate(currentMatch.dateKey)}
                 </span>
-              )}
-            </p>
+                {currentMatch.location && (
+                  <span className="ml-2 font-medium text-slate-600 dark:text-slate-400">
+                    • Venue: {currentMatch.location}
+                  </span>
+                )}
+              </p>
+              {!isEditingDate ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingDate(currentMatch.dateKey);
+                    setIsEditingDate(true);
+                  }}
+                  className="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-[#ADD8E6]/40 dark:bg-[#ADD8E6]/20 text-slate-800 dark:text-slate-200 hover:bg-[#ADD8E6]/70 transition border border-blue-200 dark:border-slate-700"
+                >
+                  Change Date (Test)
+                </button>
+              ) : null}
+            </div>
+
+            {isEditingDate && (
+              <div className="mt-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 space-y-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    Match Date:
+                  </span>
+                  <input
+                    type="date"
+                    value={editingDate}
+                    onChange={(e) => setEditingDate(e.target.value)}
+                    className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#ADD8E6]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleUpdateMatchDate(editingDate)}
+                    disabled={updatingDate}
+                    className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[#ADD8E6] text-slate-900 hover:bg-[#9cd0e2] border border-[#96cce0] transition disabled:opacity-50"
+                  >
+                    {updatingDate ? "Saving..." : "Save Date"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingDate(false)}
+                    className="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition"
+                  >
+                    Cancel
+                  </button>
+                </div>
+
+                {availableSessions.length > 0 && (
+                  <div className="flex items-center gap-2 flex-wrap pt-1 border-t border-slate-200 dark:border-slate-700">
+                    <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                      Or link to existing session:
+                    </span>
+                    <select
+                      onChange={(e) => {
+                        if (e.target.value) handleUpdateMatchDate(e.target.value);
+                      }}
+                      defaultValue=""
+                      disabled={updatingDate}
+                      className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#ADD8E6]"
+                    >
+                      <option value="" disabled>
+                        Select a practice session...
+                      </option>
+                      {availableSessions.map((s) => (
+                        <option key={s._id} value={s.dateKey}>
+                          {formatISTDate(s.dateKey)} ({s.attendanceStats?.present ?? 0} present)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="flex items-center justify-center sm:justify-end gap-3">

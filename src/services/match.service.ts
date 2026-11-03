@@ -288,3 +288,20 @@ export async function addMatchScore(data: AddScoreInput): Promise<IMatchScore> {
 
   return score;
 }
+
+/**
+ * Updates the dateKey of a match (for testing/corrections).
+ */
+export async function updateMatchDate(matchId: string, newDateKey: string) {
+  await dbConnect();
+
+  const match = await Match.findById(matchId);
+  if (!match) {
+    throw new AppError("Match not found", 404);
+  }
+
+  match.dateKey = newDateKey;
+  await match.save();
+
+  return getMatchById(matchId);
+}
