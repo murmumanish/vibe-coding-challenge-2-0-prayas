@@ -11,7 +11,7 @@ export class AppError extends Error {
   }
 }
 
-type HandlerFn = (request: Request, context?: any) => Promise<NextResponse>;
+type HandlerFn = (request: Request, context?: unknown) => Promise<NextResponse>;
 
 /**
  * Wraps an API route handler with consistent error handling.
@@ -21,7 +21,7 @@ type HandlerFn = (request: Request, context?: any) => Promise<NextResponse>;
  * - Unknown errors → 500
  */
 export function withHandler(fn: HandlerFn): HandlerFn {
-  return async (request: Request, context?: any) => {
+  return async (request: Request, context?: unknown) => {
     try {
       return await fn(request, context);
     } catch (error: unknown) {
