@@ -3,6 +3,14 @@
 import { useState } from "react";
 import { attendancePercent } from "@/domain/attendance";
 import { formatISTDate } from "@/lib/utils";
+import {
+  SportsIcon,
+  LockIcon,
+  AlertIcon,
+  CheckCircleIcon,
+  AthleteIcon,
+  SearchIcon,
+} from "./Icons";
 
 export interface AttendanceRecord {
   _id: string;
@@ -198,19 +206,21 @@ export function AttendanceForm({
   return (
     <div className="space-y-6">
       {/* Session Overview Banner */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#18202c] p-6 shadow-xs transition-colors">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xl">🏆</span>
-              <h2 className="text-xl font-black text-slate-900">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-[#ADD8E6]/30 dark:bg-[#ADD8E6]/15 text-slate-900 dark:text-slate-100 border border-blue-200 dark:border-slate-700">
+                <SportsIcon className="w-5 h-5" />
+              </span>
+              <h2 className="text-xl font-black text-slate-900 dark:text-white">
                 {session.sport?.name || "Practice Session"}
               </h2>
               <span
                 className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider ${
                   isClosed
-                    ? "bg-slate-100 text-slate-700 border border-slate-200"
-                    : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                    ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                    : "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
                 }`}
               >
                 <span
@@ -221,51 +231,53 @@ export function AttendanceForm({
                 {isClosed ? "Session Closed (Locked)" : "Session Open"}
               </span>
             </div>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Date:{" "}
-              <span className="font-semibold text-slate-700">
+              <span className="font-semibold text-slate-700 dark:text-slate-300">
                 {formatISTDate(session.dateKey)}
-              </span>{" "}
-              ({session.dateKey})
+              </span>
               {session.closedAt && (
-                <span className="ml-2 text-slate-400">
-                  • Closed at {new Date(session.closedAt).toLocaleTimeString()}
+                <span className="ml-2 text-slate-400 dark:text-slate-500">
+                  • Closed at {new Date(session.closedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                 </span>
               )}
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
             {!isClosed ? (
               <>
-                <button
-                  type="button"
-                  onClick={() => handleBulkMark("present")}
-                  disabled={batchLoading || totalPlayers === 0}
-                  className="rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-100 disabled:opacity-50 transition"
-                >
-                  Mark All Present
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleBulkMark("absent")}
-                  disabled={batchLoading || totalPlayers === 0}
-                  className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-50 transition"
-                >
-                  Mark All Absent
-                </button>
+                <div className="grid grid-cols-2 sm:flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleBulkMark("present")}
+                    disabled={batchLoading || totalPlayers === 0}
+                    className="rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 px-3.5 py-2 text-xs font-bold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 disabled:opacity-50 transition text-center shadow-xs"
+                  >
+                    Mark All Present
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleBulkMark("absent")}
+                    disabled={batchLoading || totalPlayers === 0}
+                    className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 transition text-center shadow-xs"
+                  >
+                    Mark All Absent
+                  </button>
+                </div>
                 <button
                   type="button"
                   onClick={handleCloseSession}
                   disabled={closing}
-                  className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-rose-500 disabled:opacity-50 transition"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-rose-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-rose-500 disabled:opacity-50 transition text-center"
                 >
-                  {closing ? "Closing..." : "🔒 Lock & Close Session"}
+                  <LockIcon className="w-3.5 h-3.5" />
+                  {closing ? "Closing..." : "Lock & Close Session"}
                 </button>
               </>
             ) : (
-              <span className="inline-flex items-center gap-1.5 rounded-xl bg-slate-100 px-4 py-2 text-xs font-bold text-slate-600 border border-slate-200">
-                🔒 Records Locked (400 on edit)
+              <span className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                <LockIcon className="w-3.5 h-3.5" /> Records Locked (400 on edit)
               </span>
             )}
           </div>
@@ -273,19 +285,21 @@ export function AttendanceForm({
 
         {/* Feedback banners */}
         {error && (
-          <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-700">
-            ⚠️ {error}
+          <div className="mt-4 flex items-center gap-2 rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/40 p-3 text-xs font-semibold text-red-700 dark:text-red-400">
+            <AlertIcon className="w-4 h-4 shrink-0" />
+            {error}
           </div>
         )}
         {successMessage && (
-          <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-semibold text-emerald-700">
-            ✅ {successMessage}
+          <div className="mt-4 flex items-center gap-2 rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/40 p-3 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+            <CheckCircleIcon className="w-4 h-4 shrink-0" />
+            {successMessage}
           </div>
         )}
 
         {isClosed && (
-          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50/70 p-3.5 text-xs text-amber-800 flex items-center gap-2">
-            <span className="text-base">🔒</span>
+          <div className="mt-4 rounded-xl border border-amber-200 dark:border-amber-900/40 bg-amber-50/70 dark:bg-amber-950/30 p-3.5 text-xs text-amber-800 dark:text-amber-300 flex items-center gap-2">
+            <LockIcon className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
             <span>
               This session is closed. In accordance with academy policy,
               attendance data is frozen and subsequent modifications will return
@@ -295,35 +309,35 @@ export function AttendanceForm({
         )}
 
         {/* Attendance Statistics Strip */}
-        <div className="mt-6 pt-6 border-t border-slate-100">
+        <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-3">
-            <div className="rounded-xl bg-slate-50 p-3 border border-slate-100">
-              <span className="text-[11px] font-bold uppercase text-slate-400">
-                Total Roster
+            <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3 border border-slate-100 dark:border-slate-800">
+              <span className="text-[11px] font-bold uppercase text-slate-400 dark:text-slate-500">
+                Total Players
               </span>
-              <p className="text-xl font-black text-slate-900">{totalPlayers}</p>
+              <p className="text-xl font-black text-slate-900 dark:text-white">{totalPlayers}</p>
             </div>
-            <div className="rounded-xl bg-emerald-50/60 p-3 border border-emerald-100">
-              <span className="text-[11px] font-bold uppercase text-emerald-600">
+            <div className="rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30 p-3 border border-emerald-100 dark:border-emerald-900/40">
+              <span className="text-[11px] font-bold uppercase text-emerald-600 dark:text-emerald-400">
                 Present
               </span>
-              <p className="text-xl font-black text-emerald-700">
+              <p className="text-xl font-black text-emerald-700 dark:text-emerald-400">
                 {presentCount}
               </p>
             </div>
-            <div className="rounded-xl bg-rose-50/60 p-3 border border-rose-100">
-              <span className="text-[11px] font-bold uppercase text-rose-600">
+            <div className="rounded-xl bg-rose-50/60 dark:bg-rose-950/30 p-3 border border-rose-100 dark:border-rose-900/40">
+              <span className="text-[11px] font-bold uppercase text-rose-600 dark:text-rose-400">
                 Absent
               </span>
-              <p className="text-xl font-black text-rose-700">{absentCount}</p>
+              <p className="text-xl font-black text-rose-700 dark:text-rose-400">{absentCount}</p>
             </div>
-            <div className="rounded-xl bg-indigo-50/60 p-3 border border-indigo-100">
-              <span className="text-[11px] font-bold uppercase text-indigo-600">
+            <div className="rounded-xl bg-[#ADD8E6]/25 dark:bg-[#ADD8E6]/15 p-3 border border-blue-200 dark:border-slate-700">
+              <span className="text-[11px] font-bold uppercase text-slate-700 dark:text-slate-300">
                 Attendance %
               </span>
               <p
                 className={`text-xl font-black ${
-                  meetsThreshold ? "text-emerald-700" : "text-amber-700"
+                  meetsThreshold ? "text-emerald-700 dark:text-emerald-400" : "text-rose-700 dark:text-rose-400"
                 }`}
               >
                 {percentage.toFixed(1)}%
@@ -333,16 +347,14 @@ export function AttendanceForm({
 
           {/* Progress bar */}
           <div className="space-y-1">
-            <div className="flex justify-between text-[11px] font-semibold text-slate-500">
-              <span>Roster Attendance Rate</span>
-              <span>
-                Target: 75% {meetsThreshold ? "(Met ✅)" : "(Below ⚠️)"}
-              </span>
+            <div className="flex justify-between text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+              <span>Attendance Rate</span>
+              <span>100%</span>
             </div>
-            <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden">
+            <div className="h-2.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
               <div
                 className={`h-full transition-all duration-300 ${
-                  meetsThreshold ? "bg-emerald-500" : "bg-amber-500"
+                  meetsThreshold ? "bg-emerald-500" : "bg-rose-500"
                 }`}
                 style={{ width: `${Math.min(100, percentage)}%` }}
               />
@@ -351,152 +363,244 @@ export function AttendanceForm({
         </div>
       </div>
 
-      {/* Roster & Attendance List */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden">
-        <div className="p-4 sm:p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      {/* Player Attendance List */}
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#18202c] shadow-xs overflow-hidden transition-colors">
+        <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h3 className="text-base font-bold text-slate-900">
-              Player Attendance Roster
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">
+              Player Attendance List
             </h3>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Attendance rows auto-generate as absent. Toggle status below.
             </p>
           </div>
 
-          <div className="w-full sm:w-64">
+          <div className="w-full sm:w-64 relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
+              <SearchIcon className="w-4 h-4" />
+            </div>
             <input
               type="text"
-              placeholder="🔍 Search players..."
+              placeholder="Search players..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 px-3.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 placeholder:text-slate-400"
+              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 pl-9 pr-3.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#ADD8E6]/40 focus:border-[#ADD8E6] placeholder:text-slate-400 dark:placeholder:text-slate-500"
             />
           </div>
         </div>
 
         {totalPlayers === 0 ? (
-          <div className="p-12 text-center text-slate-400">
-            <span className="text-3xl block mb-2">🏃</span>
-            <p className="text-sm font-semibold text-slate-700">
+          <div className="p-12 text-center text-slate-400 dark:text-slate-500">
+            <div className="w-12 h-12 mx-auto rounded-2xl bg-[#ADD8E6]/25 dark:bg-[#ADD8E6]/10 text-slate-800 dark:text-[#ADD8E6] flex items-center justify-center mb-3">
+              <AthleteIcon className="w-6 h-6" />
+            </div>
+            <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
               No active players for this sport
             </p>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
               Register active players assigned to {session.sport?.name} in the
-              Players Roster.
+              Players section.
             </p>
           </div>
         ) : filteredAttendances.length === 0 ? (
-          <div className="p-12 text-center text-slate-400">
-            <p className="text-sm font-semibold text-slate-700">
+          <div className="p-12 text-center text-slate-400 dark:text-slate-500">
+            <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
               No players match your search filter
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-100">
-              <thead className="bg-slate-50/80">
-                <tr>
-                  <th className="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    Player Name
-                  </th>
-                  <th className="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    Age
-                  </th>
-                  <th className="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    Current Status
-                  </th>
-                  <th className="px-6 py-3.5 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    Mark Attendance
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-slate-100">
-                {filteredAttendances.map((item) => {
-                  const isPresent = item.status === "present";
-                  const isLoading = loadingPlayerId === item.player._id;
+          <>
+            {/* ── Mobile View: Player Attendance Cards (md:hidden) ── */}
+            <div className="p-3.5 space-y-3 md:hidden">
+              {filteredAttendances.map((item) => {
+                const isPresent = item.status === "present";
+                const isLoading = loadingPlayerId === item.player._id;
 
-                  return (
-                    <tr
-                      key={item._id}
-                      className="hover:bg-slate-50/60 transition-colors"
-                    >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-3">
-                          <span className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-50 text-indigo-700 font-bold text-xs">
-                            {item.player?.name?.charAt(0) || "P"}
-                          </span>
-                          <div>
-                            <span className="text-sm font-bold text-slate-900 block">
-                              {item.player?.name}
+                return (
+                  <div
+                    key={item._id}
+                    className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#18202c] p-4 shadow-xs transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="flex items-center justify-center w-10 h-10 rounded-2xl bg-[#ADD8E6]/30 dark:bg-[#ADD8E6]/15 text-slate-900 dark:text-slate-100 border border-blue-200 dark:border-slate-700 font-bold text-sm shrink-0">
+                          {item.player?.name?.charAt(0) || "P"}
+                        </span>
+                        <div className="min-w-0">
+                          <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
+                            {item.player?.name}
+                          </h4>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-xs text-slate-500 dark:text-slate-400">
+                              {item.player?.age} yrs
                             </span>
                             {item.markedBy && (
-                              <span className="text-[10px] text-slate-400">
-                                Marked by {item.markedBy.name}
+                              <span className="text-[10px] text-slate-400 dark:text-slate-500 truncate">
+                                • Marked by {item.markedBy.name}
                               </span>
                             )}
                           </div>
                         </div>
-                      </td>
+                      </div>
 
-                      <td className="px-6 py-4 whitespace-nowrap text-xs text-slate-600 font-medium">
-                        {item.player?.age} yrs
-                      </td>
-
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold shrink-0 ${
+                          isPresent
+                            ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
+                            : "bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800"
+                        }`}
+                      >
                         <span
-                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold ${
-                            isPresent
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                              : "bg-rose-50 text-rose-700 border border-rose-200"
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            isPresent ? "bg-emerald-500" : "bg-rose-500"
                           }`}
-                        >
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              isPresent ? "bg-emerald-500" : "bg-rose-500"
-                            }`}
-                          />
-                          {isPresent ? "Present" : "Absent"}
-                        </span>
-                      </td>
+                        />
+                        {isPresent ? "Present" : "Absent"}
+                      </span>
+                    </div>
 
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                        <div className="inline-flex rounded-xl p-1 bg-slate-100 border border-slate-200">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleToggleStatus(item.player._id, "present")
-                            }
-                            disabled={isClosed || isLoading || isPresent}
-                            className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                    <div className="mt-3.5 pt-3 border-t border-slate-100 dark:border-slate-800/80 grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleToggleStatus(item.player._id, "present")
+                        }
+                        disabled={isClosed || isLoading || isPresent}
+                        className={`py-2 px-3 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+                          isPresent
+                            ? "bg-emerald-600 text-white shadow-xs"
+                            : "border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:border-emerald-300"
+                        } disabled:opacity-50`}
+                      >
+                        Present
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleToggleStatus(item.player._id, "absent")
+                        }
+                        disabled={isClosed || isLoading || !isPresent}
+                        className={`py-2 px-3 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+                          !isPresent
+                            ? "bg-rose-600 text-white shadow-xs"
+                            : "border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:border-rose-300"
+                        } disabled:opacity-50`}
+                      >
+                        Absent
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* ── Desktop View: Full Data Table (hidden md:block) ── */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800">
+                <thead className="bg-slate-50/80 dark:bg-slate-800/60">
+                  <tr>
+                    <th className="px-6 py-3.5 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Player Name
+                    </th>
+                    <th className="px-6 py-3.5 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Age
+                    </th>
+                    <th className="px-6 py-3.5 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Current Status
+                    </th>
+                    <th className="px-6 py-3.5 text-right text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Mark Attendance
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-[#18202c] divide-y divide-slate-100 dark:divide-slate-800">
+                  {filteredAttendances.map((item) => {
+                    const isPresent = item.status === "present";
+                    const isLoading = loadingPlayerId === item.player._id;
+
+                    return (
+                      <tr
+                        key={item._id}
+                        className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors"
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-3">
+                            <span className="flex items-center justify-center w-8 h-8 rounded-full bg-[#ADD8E6]/30 dark:bg-[#ADD8E6]/15 text-slate-900 dark:text-slate-100 border border-blue-200 dark:border-slate-700 font-bold text-xs shrink-0">
+                              {item.player?.name?.charAt(0) || "P"}
+                            </span>
+                            <div>
+                              <span className="text-sm font-bold text-slate-900 dark:text-slate-100 block">
+                                {item.player?.name}
+                              </span>
+                              {item.markedBy && (
+                                <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                                  Marked by {item.markedBy.name}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="px-6 py-4 whitespace-nowrap text-xs text-slate-600 dark:text-slate-400 font-medium">
+                          {item.player?.age} yrs
+                        </td>
+
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span
+                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold ${
                               isPresent
-                                ? "bg-emerald-600 text-white shadow-xs"
-                                : "text-slate-600 hover:text-emerald-700 hover:bg-slate-200/60"
-                            } disabled:opacity-50`}
+                                ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
+                                : "bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800"
+                            }`}
                           >
-                            Present
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleToggleStatus(item.player._id, "absent")
-                            }
-                            disabled={isClosed || isLoading || !isPresent}
-                            className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
-                              !isPresent
-                                ? "bg-rose-600 text-white shadow-xs"
-                                : "text-slate-600 hover:text-rose-700 hover:bg-slate-200/60"
-                            } disabled:opacity-50`}
-                          >
-                            Absent
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                isPresent ? "bg-emerald-500" : "bg-rose-500"
+                              }`}
+                            />
+                            {isPresent ? "Present" : "Absent"}
+                          </span>
+                        </td>
+
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                          <div className="inline-flex rounded-xl p-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleToggleStatus(item.player._id, "present")
+                              }
+                              disabled={isClosed || isLoading || isPresent}
+                              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                                isPresent
+                                  ? "bg-emerald-600 text-white shadow-xs"
+                                  : "text-slate-600 dark:text-slate-300 hover:text-emerald-700 dark:hover:text-emerald-400 hover:bg-slate-200/60 dark:hover:bg-slate-700"
+                              } disabled:opacity-50`}
+                            >
+                              Present
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleToggleStatus(item.player._id, "absent")
+                              }
+                              disabled={isClosed || isLoading || !isPresent}
+                              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                                !isPresent
+                                  ? "bg-rose-600 text-white shadow-xs"
+                                  : "text-slate-600 dark:text-slate-300 hover:text-rose-700 dark:hover:text-rose-400 hover:bg-slate-200/60 dark:hover:bg-slate-700"
+                              } disabled:opacity-50`}
+                            >
+                              Absent
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </div>

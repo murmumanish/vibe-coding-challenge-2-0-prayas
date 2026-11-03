@@ -5,6 +5,7 @@ import Session from "@/models/Session";
 import Attendance from "@/models/Attendance";
 import MatchScore from "@/models/MatchScore";
 import Sport from "@/models/Sport";
+import User from "@/models/User";
 import { isReady } from "@/domain/readiness";
 import { calculateAttendancePercentage } from "@/domain/attendance";
 
@@ -39,6 +40,7 @@ export async function getReadinessRoster(
   await dbConnect();
 
   // Ensure models are registered for populate
+  void User;
   void Session;
   void Sport;
 

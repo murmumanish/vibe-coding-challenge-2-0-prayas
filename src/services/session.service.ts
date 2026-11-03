@@ -4,6 +4,7 @@ import Session, { ISession } from "@/models/Session";
 import Sport from "@/models/Sport";
 import Player from "@/models/Player";
 import Attendance from "@/models/Attendance";
+import User from "@/models/User";
 import { AppError } from "@/lib/errors";
 import { Types } from "mongoose";
 
@@ -88,6 +89,7 @@ export async function getAllSessions(options?: SessionFilterOptions) {
     filter.dateKey = options.dateKey;
   }
 
+  void User;
   const sessions = await Session.find(filter)
     .populate("sport", "name slug isActive")
     .populate("createdBy", "name email")

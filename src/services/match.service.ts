@@ -6,6 +6,7 @@ import Session from "@/models/Session";
 import Attendance from "@/models/Attendance";
 import Sport from "@/models/Sport";
 import Player from "@/models/Player";
+import User from "@/models/User";
 import { AppError } from "@/lib/errors";
 import { canScoreMatch } from "@/domain/matchEligibility";
 import { Types } from "mongoose";
@@ -68,6 +69,7 @@ export async function getAllMatches(options?: {
     filter.dateKey = options.dateKey;
   }
 
+  void User;
   const matches = await Match.find(filter)
     .populate("sport", "name slug isActive")
     .populate("createdBy", "name email")

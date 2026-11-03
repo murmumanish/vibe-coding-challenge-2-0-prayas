@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
+import { AddIcon } from "@/components/Icons";
 
 interface Sport {
   _id: string;
@@ -80,10 +81,10 @@ export function SportManager() {
   return (
     <div className="space-y-6">
       {/* Add New Sport Card */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#18202c] p-6 shadow-xs transition-colors">
         <div className="mb-4">
-          <h2 className="text-base font-bold text-slate-900">Add New Sport</h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <h2 className="text-base font-bold text-slate-900 dark:text-white">Add New Sport</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Dynamic sport catalog: sports are not hardcoded. Enter any sport offered by the academy.
           </p>
         </div>
@@ -99,64 +100,64 @@ export function SportManager() {
               required
             />
           </div>
-          <Button type="submit" loading={loading} disabled={!newSportName.trim()}>
-            + Add Sport
+          <Button type="submit" loading={loading} disabled={!newSportName.trim()} className="gap-1.5">
+            <AddIcon className="w-4 h-4" /> Add Sport
           </Button>
         </form>
-        {error && <p className="mt-2 text-xs font-semibold text-red-600">{error}</p>}
+        {error && <p className="mt-2 text-xs font-semibold text-red-600 dark:text-red-400">{error}</p>}
       </div>
 
       {/* Sport List */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#18202c] shadow-xs overflow-hidden transition-colors">
+        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
           <div>
-            <h2 className="text-base font-bold text-slate-900">Configured Academy Sports</h2>
-            <p className="text-xs text-slate-500">Archived sports block new practice & matches while keeping historical logs intact.</p>
+            <h2 className="text-base font-bold text-slate-900 dark:text-white">Configured Academy Sports</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Archived sports block new practice & matches while keeping historical logs intact.</p>
           </div>
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
             {sports.length} Total
           </span>
         </div>
 
         {fetching ? (
-          <div className="p-12 text-center text-sm text-slate-400">Loading sports...</div>
+          <div className="p-12 text-center text-sm text-slate-400 dark:text-slate-500">Loading sports...</div>
         ) : sports.length === 0 ? (
-          <div className="p-12 text-center text-sm text-slate-400">
+          <div className="p-12 text-center text-sm text-slate-400 dark:text-slate-500">
             No sports configured yet. Add your first sport above.
           </div>
         ) : (
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-slate-100 dark:divide-slate-800">
             {sports.map((sport) => (
               <div
                 key={sport._id}
-                className="flex items-center justify-between px-6 py-4 hover:bg-slate-50/70 transition-colors"
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-4 hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <span className="flex items-center justify-center w-9 h-9 rounded-xl bg-indigo-50 text-indigo-700 font-bold text-sm">
+                  <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-[#ADD8E6]/30 dark:bg-[#ADD8E6]/15 text-slate-900 dark:text-slate-100 font-bold text-sm shrink-0 border border-blue-200 dark:border-slate-700">
                     {sport.name.charAt(0)}
                   </span>
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900">{sport.name}</h3>
-                    <p className="text-[11px] font-mono text-slate-400">slug: {sport.slug}</p>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">{sport.name}</h3>
+                    <p className="text-[11px] font-mono text-slate-400 dark:text-slate-500">slug: {sport.slug}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800">
                   <span
                     className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                       sport.isActive
-                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                        : "bg-slate-100 text-slate-600 border border-slate-200"
+                        ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
                     }`}
                   >
                     {sport.isActive ? "Active" : "Archived"}
                   </span>
                   <button
                     onClick={() => handleToggleStatus(sport._id)}
-                    className={`text-xs font-semibold px-3 py-1 rounded-lg border transition-colors ${
+                    className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors ${
                       sport.isActive
-                        ? "text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100"
-                        : "text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100"
+                        ? "text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/50"
+                        : "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/50"
                     }`}
                   >
                     {sport.isActive ? "Archive" : "Activate"}

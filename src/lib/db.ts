@@ -1,6 +1,8 @@
 // src/lib/db.ts
 import dns from "node:dns";
 import mongoose from "mongoose";
+// Pre-register all models to prevent MissingSchemaError during .populate()
+import "@/models";
 
 try {
   dns.setServers(["8.8.8.8", "1.1.1.1"]);

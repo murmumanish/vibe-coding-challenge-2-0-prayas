@@ -20,9 +20,9 @@ export function Button({
 
   const variants = {
     primary:
-      "bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-500 hover:to-indigo-500 shadow-indigo-600/20 focus:ring-indigo-600",
+      "bg-[#ADD8E6] text-slate-900 hover:bg-[#9cd0e2] active:bg-[#8cc4d8] border border-[#96cce0] shadow-xs focus:ring-[#ADD8E6]",
     secondary:
-      "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 focus:ring-slate-400",
+      "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 focus:ring-slate-400",
     danger: "bg-red-600 text-white hover:bg-red-500 focus:ring-red-600",
   };
 

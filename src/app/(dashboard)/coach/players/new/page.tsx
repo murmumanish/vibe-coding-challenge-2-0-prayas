@@ -12,15 +12,15 @@ export default async function NewPlayerPage() {
   return (
     <div className="space-y-6">
       <div>
-        <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
-          <Link href="/coach" className="hover:underline">Dashboard</Link>
+        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-1">
+          <Link href="/coach" className="hover:text-blue-600 dark:hover:text-[#ADD8E6] transition">Dashboard</Link>
           <span>/</span>
-          <Link href="/coach/players" className="hover:underline">Players</Link>
+          <Link href="/coach/players" className="hover:text-blue-600 dark:hover:text-[#ADD8E6] transition">Players</Link>
           <span>/</span>
-          <span>New</span>
+          <span className="text-slate-800 dark:text-slate-200 font-semibold">New</span>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">Add New Player</h1>
-        <p className="text-sm text-gray-600 mt-1">
+        <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">Add New Player</h1>
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
           Register a player into the academy. Each player is assigned to exactly one sport.
         </p>
       </div>

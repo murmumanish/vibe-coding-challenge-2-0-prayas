@@ -2,6 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { formatISTDate } from "@/lib/utils";
+import {
+  ClipboardIcon,
+  CheckIcon,
+  AlertIcon,
+  CheckCircleIcon,
+  AddIcon,
+  MatchIcon,
+} from "./Icons";
 
 export interface MatchScoreItem {
   _id: string;
@@ -176,70 +184,61 @@ export function MatchScoreForm({
   return (
     <div className="space-y-6">
       {/* Match Overview Header */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#18202c] p-4 sm:p-6 shadow-xs transition-colors">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <div className="flex flex-wrap items-center gap-2 mb-1">
-              <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
-                <span>Dumka Academy</span>
-                <span className="text-slate-400 font-semibold text-sm uppercase">vs</span>
-                <span>{match.opponent}</span>
+          <div className="w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+              <h2 className="w-full sm:w-auto text-base sm:text-xl md:text-2xl font-black text-slate-900 dark:text-white grid grid-cols-[1fr_auto_1fr] sm:flex items-center gap-2 sm:gap-3 text-center sm:text-left">
+                <span className="text-right sm:text-left truncate">Dumka Academy</span>
+                <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] sm:text-xs font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 shrink-0 self-center">
+                  vs
+                </span>
+                <span className="text-left truncate">{match.opponent}</span>
               </h2>
-              <span className="inline-flex rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-0.5 text-xs font-bold">
+
+              <span className="self-center sm:self-auto inline-flex rounded-full bg-[#ADD8E6]/30 dark:bg-[#ADD8E6]/15 text-slate-900 dark:text-slate-100 border border-blue-200 dark:border-slate-700 px-2.5 py-0.5 text-xs font-bold w-fit">
                 {match.sport?.name}
               </span>
             </div>
-            <p className="text-xs text-slate-500">
+
+            <p className="text-xs text-slate-500 dark:text-slate-400 text-center sm:text-left">
               Date:{" "}
-              <span className="font-semibold text-slate-700">
+              <span className="font-semibold text-slate-700 dark:text-slate-300">
                 {formatISTDate(match.dateKey)}
-              </span>{" "}
-              ({match.dateKey})
+              </span>
               {match.location && (
-                <span className="ml-2 font-medium text-slate-600">
+                <span className="ml-2 font-medium text-slate-600 dark:text-slate-400">
                   • Venue: {match.location}
                 </span>
               )}
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700">
+          <div className="flex items-center justify-center sm:justify-end gap-3">
+            <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
               {scores.length} Player Scores Recorded
             </span>
-          </div>
-        </div>
-
-        {/* Proof of Attendance Requirement Rule Banner */}
-        <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50/70 p-3 text-xs text-blue-800 flex items-start gap-2.5">
-          <span className="text-base leading-none">🛡️</span>
-          <div>
-            <strong className="font-bold">Proof of Attendance Rule:</strong>{" "}
-            Players are only eligible to have match scores recorded if they were
-            marked <strong>&ldquo;present&rdquo;</strong> in a practice session
-            for <strong>{match.sport?.name}</strong> on{" "}
-            <strong>{match.dateKey}</strong>.
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Record Score Form Card */}
-        <div className="lg:col-span-1 rounded-2xl border border-slate-200 bg-white p-6 shadow-xs h-fit">
-          <h3 className="text-base font-bold text-slate-900 mb-1">
+        <div className="lg:col-span-1 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#18202c] p-6 shadow-xs h-fit transition-colors">
+          <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">
             Record Player Score
           </h3>
-          <p className="text-xs text-slate-500 mb-4">
-            Select an eligible player from today&apos;s practice attendance roster.
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+            Select an eligible player from today&apos;s practice attendance list.
           </p>
 
           {unscoredEligibles.length === 0 ? (
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 text-center text-slate-500 text-xs">
-              <span className="text-2xl block mb-2">📋</span>
-              <p className="font-bold text-slate-700">
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 p-6 text-center text-slate-500 dark:text-slate-400 text-xs">
+              <ClipboardIcon className="w-7 h-7 mx-auto mb-2 text-slate-400 dark:text-slate-500" />
+              <p className="font-bold text-slate-700 dark:text-slate-200">
                 No Unscored Eligible Players
               </p>
-              <p className="text-[11px] text-slate-400 mt-1">
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
                 {eligiblePlayers.length === 0
                   ? "No players were marked present in practice for this sport and date."
                   : "All eligible practice attendees have recorded scores for this match."}
@@ -248,13 +247,13 @@ export function MatchScoreForm({
           ) : (
             <form onSubmit={handleAddScore} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
                   Eligible Player
                 </label>
                 <select
                   value={selectedPlayerId}
                   onChange={(e) => setSelectedPlayerId(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 bg-white"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2.5 text-xs sm:text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#ADD8E6]/40 focus:border-[#ADD8E6]"
                   required
                 >
                   {unscoredEligibles.map(({ player }) => {
@@ -266,13 +265,14 @@ export function MatchScoreForm({
                     );
                   })}
                 </select>
-                <span className="text-[11px] text-emerald-600 mt-1 block">
-                  ✓ Verified present in practice session
+                <span className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1.5 flex items-center gap-1">
+                  <CheckIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  Verified present in practice session
                 </span>
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
                   Primary Score (Goals / Points / Runs)
                 </label>
                 <input
@@ -285,13 +285,13 @@ export function MatchScoreForm({
                       e.target.value === "" ? "" : Number(e.target.value)
                     )
                   }
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 bg-white"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2.5 text-xs sm:text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#ADD8E6]/40 focus:border-[#ADD8E6]"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
                   Match Notes / Stats (Optional)
                 </label>
                 <input
@@ -299,114 +299,121 @@ export function MatchScoreForm({
                   placeholder="e.g. 2 assists, 1 clean tackle, MVP"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 placeholder:text-slate-400"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2 text-xs sm:text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#ADD8E6]/40 focus:border-[#ADD8E6] placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 />
               </div>
 
               {error && (
-                <div className="rounded-xl border border-red-200 bg-red-50 p-2.5 text-xs font-semibold text-red-700">
-                  ⚠️ {error}
+                <div className="flex items-center gap-2 rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/40 p-2.5 text-xs font-semibold text-red-700 dark:text-red-400">
+                  <AlertIcon className="w-4 h-4 shrink-0" /> {error}
                 </div>
               )}
               {success && (
-                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-2.5 text-xs font-semibold text-emerald-700">
-                  ✅ {success}
+                <div className="flex items-center gap-2 rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/40 p-2.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                  <CheckCircleIcon className="w-4 h-4 shrink-0" /> {success}
                 </div>
               )}
 
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full rounded-xl bg-indigo-600 py-2.5 text-xs font-bold text-white hover:bg-indigo-500 disabled:opacity-50 transition"
+                className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#ADD8E6] py-2.5 text-xs font-bold text-slate-900 hover:bg-[#9cd0e2] border border-[#96cce0] shadow-xs disabled:opacity-50 transition"
               >
-                {submitting ? "Saving Score..." : "+ Record Score"}
+                <AddIcon className="w-4 h-4" />
+                {submitting ? "Saving Score..." : "Record Score"}
               </button>
             </form>
           )}
         </div>
 
         {/* Scores Table Card */}
-        <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden">
-          <div className="p-4 sm:p-6 border-b border-slate-100 flex items-center justify-between">
+        <div className="lg:col-span-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#18202c] shadow-xs overflow-hidden transition-colors">
+          <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
             <div>
-              <h3 className="text-base font-bold text-slate-900">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
                 Official Match Scores
               </h3>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Official scores count towards the 2-match readiness standard.
               </p>
             </div>
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
               {scores.length} Scored
             </span>
           </div>
 
           {scores.length === 0 ? (
-            <div className="p-12 text-center text-slate-400">
-              <span className="text-3xl block mb-2">⚽</span>
-              <p className="text-sm font-semibold text-slate-700">
+            <div className="p-12 text-center text-slate-400 dark:text-slate-500">
+              <div className="w-12 h-12 mx-auto rounded-2xl bg-[#ADD8E6]/25 dark:bg-[#ADD8E6]/10 text-slate-800 dark:text-[#ADD8E6] flex items-center justify-center mb-3">
+                <MatchIcon className="w-6 h-6" />
+              </div>
+              <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
                 No scores recorded yet
               </p>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
                 Record performance scores for practice-eligible players using the
                 form on the left.
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-100">
-                <thead className="bg-slate-50/80">
-                  <tr>
-                    <th className="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      Player
-                    </th>
-                    <th className="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      Age
-                    </th>
-                    <th className="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      Primary Score
-                    </th>
-                    <th className="px-6 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      Notes
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-slate-100">
-                  {scores.map((score) => (
-                    <tr
-                      key={score._id}
-                      className="hover:bg-slate-50/60 transition-colors"
-                    >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-3">
-                          <span className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-50 text-indigo-700 font-bold text-xs">
+            <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              {scores.map((score) => {
+                const notes = (score.stats as { notes?: string })?.notes;
+                return (
+                  <div
+                    key={score._id}
+                    className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-4 shadow-xs hover:shadow-sm hover:border-[#ADD8E6] transition-all flex flex-col justify-between"
+                  >
+                    <div>
+                      {/* Athlete Identity Row */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-[#ADD8E6] text-slate-900 border border-blue-200 font-black text-sm shrink-0 shadow-xs">
                             {score.player?.name?.charAt(0) || "P"}
                           </span>
-                          <span className="text-sm font-bold text-slate-900">
-                            {score.player?.name}
+                          <div className="min-w-0">
+                            <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                              {score.player?.name}
+                            </h4>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                              {score.player?.age ? `${score.player.age} yrs old` : "Player"}
+                            </span>
+                          </div>
+                        </div>
+
+                        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 shrink-0">
+                          <CheckIcon className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                          Verified
+                        </span>
+                      </div>
+
+                      {/* Performance Score Box */}
+                      <div className="mt-3.5 p-3 rounded-xl bg-white dark:bg-[#18202c] border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between shadow-xs">
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
+                            Match Score
+                          </span>
+                          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            {match.sport?.name || "Official"} Score
                           </span>
                         </div>
-                      </td>
-
-                      <td className="px-6 py-4 whitespace-nowrap text-xs text-slate-600 font-medium">
-                        {score.player?.age} yrs
-                      </td>
-
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center px-3 py-1 rounded-xl text-sm font-black bg-indigo-50 text-indigo-700 border border-indigo-200">
+                        <span className="text-2xl font-black text-slate-900 dark:text-white px-3 py-1 rounded-xl bg-[#ADD8E6]/35 dark:bg-[#ADD8E6]/15 border border-[#ADD8E6]/60 dark:border-slate-700 shadow-xs">
                           {score.primaryScore}
                         </span>
-                      </td>
+                      </div>
+                    </div>
 
-                      <td className="px-6 py-4 whitespace-nowrap text-xs text-slate-500">
-                        {(score.stats as { notes?: string })?.notes || (
-                          <span className="text-slate-300 italic">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                    {/* Match Notes / Observations */}
+                    {notes && (
+                      <div className="mt-3 pt-2.5 border-t border-slate-200/70 dark:border-slate-700/70 text-xs text-slate-600 dark:text-slate-300 italic flex items-start gap-1.5">
+                        <span className="text-slate-400 not-italic text-sm leading-none">&ldquo;</span>
+                        <span className="line-clamp-2">{notes}</span>
+                        <span className="text-slate-400 not-italic text-sm leading-none">&rdquo;</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
