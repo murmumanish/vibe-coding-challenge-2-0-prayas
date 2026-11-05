@@ -14,6 +14,7 @@ import {
   ClipboardIcon,
   MatchIcon,
   StarIcon,
+  AddIcon,
 } from "@/components/Icons";
 
 export default async function CoachDashboard() {
@@ -38,10 +39,10 @@ export default async function CoachDashboard() {
       {/* Welcome Banner */}
       <div className="rounded-2xl bg-[#ADD8E6] p-6 sm:p-8 shadow-sm relative overflow-hidden border border-blue-200">
         <div className="relative z-10">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-xs font-bold mb-3 border border-blue-300/60 text-blue-950 shadow-xs">
+          {/*<div className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-xs font-bold mb-3 border border-blue-300/60 text-blue-950 shadow-xs">
             <StadiumIcon className="w-3.5 h-3.5 text-blue-800" />
             <span>Dumka Academy Headquarters</span>
-          </div>
+          </div>*/}
           <h1 className="text-2xl font-black tracking-tight sm:text-4xl text-slate-900">
             Welcome back, Coach!
           </h1>
@@ -49,7 +50,7 @@ export default async function CoachDashboard() {
             Track daily practice sessions, record official match performance scores, and prepare trial-ready players for scouting teams.
           </p>
 
-          <div className="mt-5 flex flex-wrap items-center gap-2.5">
+          {/*<div className="mt-5 flex flex-wrap items-center gap-2.5">
             <Link
               href="/coach/sessions"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-slate-900 text-white hover:bg-slate-800 shadow-sm transition-transform active:scale-95"
@@ -64,19 +65,20 @@ export default async function CoachDashboard() {
               <MatchIcon className="w-4 h-4 text-blue-700" />
               <span>Record Match Scores</span>
             </Link>
-          </div>
+
+          </div>*/}
         </div>
       </div>
 
       {/* Quick Stats Overview */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 lg:grid-cols-6">
         {/* Active Sports */}
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#18202c] p-4 sm:p-5 shadow-xs transition-colors">
           <div className="flex items-center justify-between">
             <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Active Sports
             </span>
-            <SportsIcon className="w-4 h-4 text-blue-500 dark:text-[#ADD8E6]" />
+            {/*<SportsIcon className="w-4 h-4 text-blue-500 dark:text-[#ADD8E6]" />*/}
           </div>
           <p className="mt-2 text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{activeSportsCount}</p>
           <span className="mt-1 text-[11px] text-slate-400 dark:text-slate-500 block">Offered at Academy</span>
@@ -88,7 +90,7 @@ export default async function CoachDashboard() {
             <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Active Players
             </span>
-            <PeopleIcon className="w-4 h-4 text-blue-500 dark:text-blue-400" />
+            {/*<PeopleIcon className="w-4 h-4 text-blue-500 dark:text-blue-400" />*/}
           </div>
           <p className="mt-2 text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{activePlayersCount}</p>
           <span className="mt-1 text-[11px] text-slate-400 dark:text-slate-500 block">Registered in Academy</span>
@@ -100,23 +102,74 @@ export default async function CoachDashboard() {
             <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Practice Logs
             </span>
-            <ClipboardIcon className="w-4 h-4 text-purple-500 dark:text-purple-400" />
+            {/*<ClipboardIcon className="w-4 h-4 text-purple-500 dark:text-purple-400" />*/}
           </div>
-          <p className="mt-2 text-2xl sm:text-3xl font-black text-purple-600 dark:text-purple-400">{totalSessionsCount}</p>
+          <p className="mt-2 text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{totalSessionsCount}</p>
           <span className="mt-1 text-[11px] text-slate-400 dark:text-slate-500 block">Sessions Conducted</span>
         </div>
 
-        {/* Trial-Ready Athletes */}
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#18202c] p-4 sm:p-5 shadow-xs transition-colors">
+        {/* Trial-Ready Athletes Card */}
+        <Link
+          href="/coach/ready"
+          className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#18202c] p-4 sm:p-5 shadow-xs transition-all hover:border-emerald-400 dark:hover:border-emerald-600 hover:shadow-md flex flex-col justify-between group active:scale-[0.98] cursor-pointer"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+              Trial Ready
+            </span>
+            {/*<StarIcon className="w-4 h-4 text-emerald-500 dark:text-emerald-400 group-hover:scale-110 transition-transform" />*/}
+          </div>
+          <div className="flex items-baseline justify-between mt-2">
+            <p className="mt-2 text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
+              {readyCount}
+            </p>
+          </div>
+          <span className="mt-1 text-[11px] text-slate-400 dark:text-slate-500 block">
+            Qualified for Scouts
+          </span>
+        </Link>
+
+        {/* Add Player Section Card */}
+        <Link
+          href="/coach/players/new"
+          className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#18202c] p-4 sm:p-5 shadow-xs transition-all hover:border-[#ADD8E6] dark:hover:border-slate-700 hover:shadow-md flex flex-col justify-between group active:scale-[0.98]"
+        >
           <div className="flex items-center justify-between">
             <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Trial-Ready
+              Add Player
             </span>
-            <StarIcon className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+            {/*<span className="flex items-center justify-center w-6 h-6 rounded-lg bg-[#ADD8E6]/40 dark:bg-[#ADD8E6]/20 text-slate-900 dark:text-[#ADD8E6] group-hover:scale-110 transition-transform">
+              <AddIcon className="w-3.5 h-3.5" />
+            </span>*/}
           </div>
-          <p className="mt-2 text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400">{readyCount}</p>
-          <span className="mt-1 text-[11px] text-slate-400 dark:text-slate-500 block">Qualified for Scouts</span>
-        </div>
+          <p className="mt-2 text-xl sm:text-2xl font-black text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-[#ADD8E6] transition-colors flex items-center justify-between">
+            <span>Register</span>
+          </p>
+          <span className="mt-1 text-[11px] text-slate-400 dark:text-slate-500 block">
+            Enroll New Talent
+          </span>
+        </Link>
+
+        {/* Create Session Section Card */}
+        <Link
+          href="/coach/sessions/new"
+          className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#18202c] p-4 sm:p-5 shadow-xs transition-all hover:border-purple-300 dark:hover:border-purple-700 hover:shadow-md flex flex-col justify-between group active:scale-[0.98]"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+              New Session
+            </span>
+            {/*<span className="flex items-center justify-center w-6 h-6 rounded-lg bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 group-hover:scale-110 transition-transform">
+              <ClipboardIcon className="w-3.5 h-3.5" />
+            </span>*/}
+          </div>
+          <p className="mt-2 text-xl sm:text-2xl font-black text-slate-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors flex items-center justify-between">
+            <span>Session</span>
+          </p>
+          <span className="mt-1 text-[11px] text-slate-400 dark:text-slate-500 block">
+            Start Daily Practice
+          </span>
+        </Link>
       </div>
 
       {/* Primary Actions Grid */}

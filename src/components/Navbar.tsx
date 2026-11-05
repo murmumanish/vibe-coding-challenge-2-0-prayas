@@ -12,6 +12,7 @@ import {
   PeopleIcon,
   ClipboardIcon,
   MatchIcon,
+  StarIcon,
   ScoutIcon,
   AthleteIcon,
   LogoutIcon,
@@ -37,6 +38,7 @@ const COACH_NAV: NavItem[] = [
   { label: "Players", href: "/coach/players", icon: PeopleIcon },
   { label: "Sessions", href: "/coach/sessions", icon: ClipboardIcon },
   { label: "Matches", href: "/coach/matches", icon: MatchIcon },
+  { label: "Trial Ready", href: "/coach/ready", icon: StarIcon },
 ];
 
 const SCOUT_NAV: NavItem[] = [
@@ -58,6 +60,7 @@ export function Navbar() {
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -83,6 +86,7 @@ export function Navbar() {
   }, []);
 
   async function handleLogout() {
+    setLoggingOut(true);
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/login");
     router.refresh();
@@ -132,9 +136,9 @@ export function Navbar() {
                 <span className="font-extrabold text-slate-900 dark:text-white tracking-tight text-sm sm:text-base md:text-lg block leading-none">
                   Sports Academy
                 </span>
-                <span className="text-[10px] uppercase font-bold tracking-widest text-slate-600 dark:text-slate-300 mt-0.5 block leading-none">
+                {/*<span className="text-[10px] uppercase font-bold tracking-widest text-slate-600 dark:text-slate-300 mt-0.5 block leading-none">
                   Dumka Portal
-                </span>
+                </span>*/}
               </div>
             </Link>
           </div>
@@ -186,10 +190,11 @@ export function Navbar() {
             <button
               type="button"
               onClick={handleLogout}
-              className="hidden md:inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/70 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-xs"
+              disabled={loggingOut}
+              className="hidden md:inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/70 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-red-600 hover:text-white hover:border-red-600 active:bg-red-700 active:text-white transition-colors shadow-xs"
             >
               <LogoutIcon className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-              <span>Sign out</span>
+              <span>{loggingOut ? "Signing out..." : "Sign out"}</span>
             </button>
           </div>
         </div>
@@ -288,10 +293,15 @@ export function Navbar() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 transition-colors"
+                disabled={loggingOut}
+                className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-[0.98] ${
+                  loggingOut
+                    ? "bg-red-600 text-white border border-red-600 shadow-md"
+                    : "text-red-600 dark:text-red-400 bg-red-50/50 dark:bg-red-950/30 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 dark:hover:text-white active:bg-red-600 active:text-white dark:active:bg-red-600 dark:active:text-white border border-red-200 dark:border-red-900/50 active:border-red-600"
+                }`}
               >
                 <LogoutIcon className="w-4 h-4" />
-                <span>Sign Out of Desk</span>
+                <span>{loggingOut ? "Signing Out..." : "Sign Out of Desk"}</span>
               </button>
             </div>
           </aside>
@@ -302,7 +312,7 @@ export function Navbar() {
       {user?.role === "coach" && (
         <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 dark:bg-[#18202c]/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] pb-safe transition-colors">
           <div className="flex items-stretch h-14">
-            {COACH_NAV.map((link) => {
+            {COACH_NAV.filter((link) => link.href !== "/coach/ready").map((link) => {
               const active = isActive(link.href);
               const IconComp = link.icon;
               return (

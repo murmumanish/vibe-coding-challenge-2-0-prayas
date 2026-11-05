@@ -6,6 +6,7 @@ export interface IPlayer extends Document {
   age: number;
   sport: Types.ObjectId;
   userId?: Types.ObjectId;
+  phone?: string;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -17,6 +18,7 @@ const PlayerSchema = new Schema<IPlayer>(
     age: { type: Number, required: true, min: 5, max: 60 },
     sport: { type: Schema.Types.ObjectId, ref: "Sport", required: true },
     userId: { type: Schema.Types.ObjectId, ref: "User" },
+    phone: { type: String, trim: true },
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }

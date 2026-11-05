@@ -2,7 +2,11 @@
 import { NextResponse } from "next/server";
 import { withHandler, AppError } from "@/lib/errors";
 import { requireRole, getSession } from "@/lib/auth";
-import { getPlayerById, togglePlayerActive } from "@/services/player.service";
+import {
+  getPlayerById,
+  togglePlayerActive,
+  getPlayerAttendanceStats,
+} from "@/services/player.service";
 
 export const GET = withHandler(
   async (_request: Request, context?: unknown) => {
@@ -11,26 +15,34 @@ export const GET = withHandler(
       throw new Error("UNAUTHORIZED");
     }
 
+    // Access control:
+    // Scout: forbidden from direct player endpoints (must use /api/ready)
+    if (session.role === "scout") {
+      throw new AppError("Forbidden: Scouts cannot view player rosters directly", 403);
+    }
+
     const { params } = context as { params: Promise<{ id: string }> };
     const { id } = await params;
 
     const player = await getPlayerById(id);
 
-    // Access control:
-    // Coach: allowed
-    // Scout: forbidden from direct player endpoints (must use /api/ready)
     // Player: only own record
-    if (session.role === "scout") {
-      throw new AppError("Forbidden: Scouts cannot view player rosters directly", 403);
-    }
-
     if (session.role === "player") {
       if (!player.userId || player.userId.toString() !== session.userId) {
         throw new AppError("Forbidden: Cannot view other players", 403);
       }
     }
 
-    return NextResponse.json({ player });
+    let stats = null;
+    if (typeof getPlayerAttendanceStats === "function") {
+      try {
+        stats = await getPlayerAttendanceStats(id);
+      } catch {
+        stats = null;
+      }
+    }
+
+    return NextResponse.json({ player, stats });
   }
 );
 

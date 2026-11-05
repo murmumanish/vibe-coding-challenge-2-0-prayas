@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
 import { AddIcon } from "@/components/Icons";
+import { Skeleton } from "@/components/Skeleton";
 
 interface Sport {
   _id: string;
@@ -120,7 +121,23 @@ export function SportManager() {
         </div>
 
         {fetching ? (
-          <div className="p-12 text-center text-sm text-slate-400 dark:text-slate-500">Loading sports...</div>
+          <div className="divide-y divide-slate-100 dark:divide-slate-800 animate-in fade-in duration-200">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-4">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="w-10 h-10 rounded-xl" />
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-3 w-16" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-6 w-16 rounded-full" />
+                  <Skeleton className="h-8 w-20 rounded-xl" />
+                </div>
+              </div>
+            ))}
+          </div>
         ) : sports.length === 0 ? (
           <div className="p-12 text-center text-sm text-slate-400 dark:text-slate-500">
             No sports configured yet. Add your first sport above.

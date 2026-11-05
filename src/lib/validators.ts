@@ -22,6 +22,7 @@ export const createPlayerSchema = z
       .min(5, "Age must be at least 5")
       .max(60, "Age must be at most 60"),
     sportId: z.string().min(1, "Sport is required"),
+    phone: z.string().max(20).optional().or(z.literal("")),
     email: z.string().email("Invalid email address").optional().or(z.literal("")),
     password: z
       .string()

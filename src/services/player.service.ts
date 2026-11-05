@@ -15,6 +15,7 @@ export interface CreatePlayerInput {
   name: string;
   age: number;
   sportId: string;
+  phone?: string;
   email?: string;
   password?: string;
 }
@@ -89,6 +90,7 @@ export async function createPlayer(data: CreatePlayerInput): Promise<IPlayer> {
     name: data.name.trim(),
     age: data.age,
     sport: sport._id,
+    phone: data.phone?.trim() || undefined,
     userId: userObjectId,
     isActive: true,
   });

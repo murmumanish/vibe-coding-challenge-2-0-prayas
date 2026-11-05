@@ -4,10 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   StadiumIcon,
-  PeopleIcon,
-  ScoutIcon,
   AlertIcon,
-  TargetIcon,
+  EyeIcon,
+  EyeOffIcon,
 } from "@/components/Icons";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -15,17 +14,15 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleLogin(e?: React.FormEvent, customEmail?: string, customPassword?: string) {
-    if (e) e.preventDefault();
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
     setError("");
 
-    const targetEmail = customEmail ?? email;
-    const targetPassword = customPassword ?? password;
-
-    if (!targetEmail || !targetPassword) {
+    if (!email || !password) {
       setError("Please enter both email and password.");
       return;
     }
@@ -36,7 +33,7 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: targetEmail, password: targetPassword }),
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await res.json();
@@ -54,12 +51,6 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
-  }
-
-  function fillCredentials(fillEmail: string, fillPass: string) {
-    setEmail(fillEmail);
-    setPassword(fillPass);
-    handleLogin(undefined, fillEmail, fillPass);
   }
 
   return (
@@ -82,31 +73,6 @@ export default function LoginPage() {
         </p>
       </div>
 
-      {/* Quick Test Login Helpers (No Emojis) */}
-      <div className="mb-6 p-3.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 rounded-2xl">
-        <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-center mb-2.5">
-          One-Click Demo Login
-        </p>
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => fillCredentials("coach@academy.com", "coach123")}
-            className="flex items-center justify-center gap-2 py-2 px-3 text-xs font-bold rounded-xl bg-[#ADD8E6]/40 dark:bg-[#ADD8E6]/15 text-slate-900 dark:text-slate-100 hover:bg-[#ADD8E6]/60 transition-colors border border-blue-200 dark:border-blue-900/50"
-          >
-            <PeopleIcon className="w-4 h-4 text-slate-700 dark:text-slate-300" />
-            <span>Coach Demo</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => fillCredentials("scout@academy.com", "scout123")}
-            className="flex items-center justify-center gap-2 py-2 px-3 text-xs font-bold rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-colors border border-emerald-200 dark:border-emerald-800"
-          >
-            <ScoutIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            <span>Scout Demo</span>
-          </button>
-        </div>
-      </div>
-
       {error && (
         <div className="mb-6 rounded-2xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/50 p-3.5 text-xs font-semibold text-red-700 dark:text-red-300 flex items-start gap-2.5">
           <AlertIcon className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
@@ -115,7 +81,7 @@ export default function LoginPage() {
       )}
 
       {/* Login Form */}
-      <form onSubmit={(e) => handleLogin(e)} className="space-y-4">
+      <form onSubmit={handleLogin} className="space-y-4">
         <div>
           <label
             htmlFor="email"
@@ -142,16 +108,30 @@ export default function LoginPage() {
           >
             Password
           </label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            autoComplete="current-password"
-            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-2.5 text-slate-900 dark:text-white shadow-xs placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#ADD8E6] focus:outline-none focus:ring-2 focus:ring-[#ADD8E6]/40 text-xs sm:text-sm transition"
-            placeholder="••••••••"
-          />
+          <div className="relative">
+            <input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+              className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 pl-4 pr-11 py-2.5 text-slate-900 dark:text-white shadow-xs placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#ADD8E6] focus:outline-none focus:ring-2 focus:ring-[#ADD8E6]/40 text-xs sm:text-sm transition"
+              placeholder="••••••••"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+            >
+              {showPassword ? (
+                <EyeOffIcon className="w-4 h-4" />
+              ) : (
+                <EyeIcon className="w-4 h-4" />
+              )}
+            </button>
+          </div>
         </div>
 
         <button
