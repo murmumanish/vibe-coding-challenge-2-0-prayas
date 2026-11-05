@@ -17,6 +17,7 @@ export function PlayerForm() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
+  const [phone, setPhone] = useState("");
   const [sportId, setSportId] = useState("");
   const [sports, setSports] = useState<Sport[]>([]);
 
@@ -71,6 +72,10 @@ export function PlayerForm() {
         age: parsedAge,
         sportId,
       };
+
+      if (phone.trim()) {
+        payload.phone = phone.trim();
+      }
 
       if (createLogin && email.trim()) {
         payload.email = email.trim();
@@ -149,6 +154,15 @@ export function PlayerForm() {
             required
           />
         </div>
+
+        <Input
+          id="phone"
+          type="tel"
+          label="Contact Phone Number (Optional)"
+          placeholder="e.g. +91 98765 43210"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+        />
       </div>
 
       {sports.length === 0 && (

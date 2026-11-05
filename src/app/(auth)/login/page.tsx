@@ -18,8 +18,8 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleLogin(e?: React.FormEvent) {
-    if (e) e.preventDefault();
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
     setError("");
 
     if (!email || !password) {
@@ -81,7 +81,7 @@ export default function LoginPage() {
       )}
 
       {/* Login Form */}
-      <form onSubmit={(e) => handleLogin(e)} className="space-y-4">
+      <form onSubmit={handleLogin} className="space-y-4">
         <div>
           <label
             htmlFor="email"
@@ -122,9 +122,8 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              aria-label={showPassword ? "Hide password" : "View password"}
-              title={showPassword ? "Hide password" : "View password"}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition p-1 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#ADD8E6]"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
             >
               {showPassword ? (
                 <EyeOffIcon className="w-4 h-4" />

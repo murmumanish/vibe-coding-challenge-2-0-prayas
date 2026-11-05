@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { formatISTDate, getISTDateKey } from "@/lib/utils";
 import {
-  AddIcon,
+
   CloseIcon,
   AlertIcon,
   ClipboardIcon,
@@ -51,6 +51,15 @@ export function SessionsManager({
   const router = useRouter();
   const [sessions, setSessions] = useState<SessionItem[]>(initialSessions);
   const [showCreateModal, setShowCreateModal] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("new") === "true" || params.get("open") === "true") {
+        setShowCreateModal(true);
+      }
+    }
+  }, []);
 
   // Form states
   const [selectedSportId, setSelectedSportId] = useState(
@@ -107,27 +116,14 @@ export function SessionsManager({
 
   return (
     <div className="space-y-6">
-      {/* Top Action Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-            Practice Sessions
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            Open daily practice sessions, record player attendance, and lock records.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => {
-            setCreateError("");
-            setShowCreateModal(true);
-          }}
-          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[#ADD8E6] px-4 py-2.5 text-xs sm:text-sm font-bold text-slate-900 border border-[#96cce0] shadow-xs hover:bg-[#9cd0e2] active:bg-[#8cc4d8] active:scale-95 transition"
-        >
-          <AddIcon className="w-4 h-4" /> Open New Session
-        </button>
+      {/* Header */}
+      <div>
+        <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+          Practice Sessions
+        </h1>
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+          Open daily practice sessions, record player attendance, and lock records.
+        </p>
       </div>
 
       {/* Creation Modal / Card */}
@@ -225,7 +221,7 @@ export function SessionsManager({
       )}
 
       {/* Filter Bar */}
-      <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between bg-white dark:bg-[#18202c] p-3.5 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs transition-colors">
+      <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center justify-between bg-white dark:bg-[#18202c] p-2.5 sm:p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs transition-colors">
         <div className="flex flex-wrap items-center gap-3">
           <div className="w-full sm:w-48">
             <select
@@ -271,14 +267,14 @@ export function SessionsManager({
           </p>
           <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
             {sessions.length === 0
-              ? "Open your first daily session using the button above."
+              ? "No practice sessions recorded yet."
               : "No sessions match your filter criteria."}
           </p>
         </div>
       ) : (
         <>
           {/* ── Mobile View: Dedicated Practice Session Cards (md:hidden) ── */}
-          <div className="grid grid-cols-1 gap-3.5 md:hidden">
+          <div className="grid grid-cols-1 gap-2.5 md:hidden">
             {filteredSessions.map((session) => {
               const isOpen = session.status === "open";
               const total = session.attendanceStats?.total || 0;
@@ -288,26 +284,26 @@ export function SessionsManager({
               return (
                 <div
                   key={session._id}
-                  className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#18202c] p-4 shadow-xs transition-colors hover:shadow-sm"
+                  className="rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#18202c] p-3 sm:p-3.5 shadow-xs transition-colors hover:shadow-sm"
                 >
-                  {/* Card Header: Sport + Status Badge */}
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5">
-                      <span className="flex items-center justify-center w-9 h-9 rounded-xl bg-[#ADD8E6]/30 dark:bg-[#ADD8E6]/15 text-slate-900 dark:text-slate-100 border border-blue-200 dark:border-slate-700 font-black text-xs shrink-0">
+                  {/* Card Header: Sport + Date + Status Badge */}
+                  <div className="flex items-center justify-between gap-2.5">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#ADD8E6]/30 dark:bg-[#ADD8E6]/15 text-slate-900 dark:text-slate-100 border border-blue-200 dark:border-slate-700 font-black text-xs shrink-0">
                         {session.sport?.name?.charAt(0) || "S"}
                       </span>
-                      <div>
-                        <h4 className="text-base font-bold text-slate-900 dark:text-white">
+                      <div className="min-w-0">
+                        <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">
                           {session.sport?.name || "Practice Session"}
                         </h4>
-                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium block truncate">
                           {formatISTDate(session.dateKey)}
                         </span>
                       </div>
                     </div>
 
                     <span
-                      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold shrink-0 ${
+                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold shrink-0 ${
                         isOpen
                           ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
                           : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
@@ -322,17 +318,14 @@ export function SessionsManager({
                     </span>
                   </div>
 
-                  {/* Attendance Stats Strip */}
-                  <div className="mt-3.5 pt-3.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                      Player Attendance
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-slate-900 dark:text-white">
-                        {present} / {total} present
+                  {/* Slim Bottom Strip: Attendance info on left, Action on right */}
+                  <div className="mt-2.5 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 shrink-0">
+                        Attendance:
                       </span>
                       <span
-                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 ${
                           Number(percent) >= 75
                             ? "bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300"
                             : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
@@ -341,19 +334,16 @@ export function SessionsManager({
                         {percent}%
                       </span>
                     </div>
-                  </div>
 
-                  {/* Action Button */}
-                  <div className="mt-3.5 pt-3 border-t border-slate-100 dark:border-slate-800/80">
                     <Link
                       href={`/coach/sessions/${session._id}`}
-                      className={`w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-4 text-xs font-bold rounded-xl transition text-center shadow-xs active:scale-[0.98] ${
+                      className={`inline-flex items-center justify-center gap-1 py-1 px-3 text-xs font-bold rounded-lg transition shadow-2xs active:scale-[0.98] shrink-0 ${
                         isOpen
                           ? "bg-[#ADD8E6] text-slate-900 hover:bg-[#9cd0e2] border border-[#96cce0]"
                           : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700"
                       }`}
                     >
-                      {isOpen ? "Mark Attendance →" : "View Attendance Sheet"}
+                      {isOpen ? "Mark Attendance" : "View Sheet"}
                     </Link>
                   </div>
                 </div>

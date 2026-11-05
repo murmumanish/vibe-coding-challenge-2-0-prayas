@@ -26,8 +26,8 @@ export default async function ScoutDashboard() {
           </h1>
           <p className="mt-2 text-slate-700 text-xs sm:text-sm max-w-xl leading-relaxed">
             Verified academy players who meet the strict trial standard:{" "}
-            <strong>≥ 75% closed session practice attendance</strong> AND at least{" "}
-            <strong>2 official matches played</strong>.
+            {/*<strong>≥ 75% closed session practice attendance</strong> AND at least{" "}
+            <strong>2 official matches played</strong>.*/}
           </p>
         </div>
       </div>

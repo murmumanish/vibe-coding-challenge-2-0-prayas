@@ -153,10 +153,10 @@ export default async function PlayerDashboard() {
         <div className="relative z-10 flex flex-col gap-4 sm:gap-6">
           {/* Top Chips Row */}
           <div className="flex flex-wrap items-center justify-between gap-2.5">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-xs font-bold border border-blue-300/60 text-slate-900 shadow-xs">
+            {/*<div className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-xs font-bold border border-blue-300/60 text-slate-900 shadow-xs">
               <AthleteIcon className="w-3.5 h-3.5 text-blue-800" />
               <span>Dumka Sports Academy &bull; Athlete Portal</span>
-            </div>
+            </div>*/}
 
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-white/80 text-slate-900 border border-blue-300/60">
@@ -170,7 +170,7 @@ export default async function PlayerDashboard() {
                 }`}
               >
                 <span
-                  className={`w-1.5 h-1.5 rounded-full ${
+                  className={`${
                     player?.isActive ? "bg-emerald-600" : "bg-slate-500"
                   }`}
                 />
@@ -189,10 +189,9 @@ export default async function PlayerDashboard() {
                 <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight">
                   {playerName}
                 </h1>
-                <p className="text-xs sm:text-sm text-slate-700 mt-0.5">
-                  {player?.age ? `${player.age} yrs &bull; ` : ""}
-                  Registered: {session.email}
-                </p>
+                {/*<p className="text-xs sm:text-sm text-slate-700 mt-0.5">
+                  {player?.age ? `Age: ${player.age} yrs • ` : ""}Registered: {session.email}
+                </p>*/}
               </div>
             </div>
 
@@ -200,7 +199,7 @@ export default async function PlayerDashboard() {
             <div className="sm:self-center">
               {trialReady ? (
                 <div className="inline-flex items-center gap-2 rounded-2xl bg-emerald-100 border border-emerald-300 px-3.5 py-2 text-xs font-bold text-emerald-900 shadow-xs">
-                  <StarIcon className="w-4 h-4 text-emerald-700 shrink-0" />
+                  {/*<StarIcon className="w-4 h-4 text-emerald-700 shrink-0" />*/}
                   <span>Qualified for Scout Trials</span>
                 </div>
               ) : (
