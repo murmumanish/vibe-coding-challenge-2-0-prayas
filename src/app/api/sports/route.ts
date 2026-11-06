@@ -3,10 +3,17 @@ import { NextResponse } from "next/server";
 import { withHandler, AppError } from "@/lib/errors";
 import { requireRole } from "@/lib/auth";
 import { createSportSchema } from "@/lib/validators";
-import { getAllSports, createSport } from "@/services/sport.service";
+import { getAllSports, createSport, getSportPresets } from "@/services/sport.service";
 
 export const GET = withHandler(async (request: Request) => {
   const url = new URL(request.url);
+  const showPresets = url.searchParams.get("presets") === "true";
+
+  if (showPresets) {
+    const presets = await getSportPresets();
+    return NextResponse.json({ presets });
+  }
+
   const activeOnly = url.searchParams.get("activeOnly") === "true";
   const sports = await getAllSports(activeOnly);
   return NextResponse.json({ sports });
@@ -21,6 +28,6 @@ export const POST = withHandler(async (request: Request) => {
     throw new AppError(parsed.error.issues[0]?.message || "Invalid input", 400);
   }
 
-  const sport = await createSport(parsed.data.name);
+  const sport = await createSport(parsed.data);
   return NextResponse.json({ sport }, { status: 201 });
 });

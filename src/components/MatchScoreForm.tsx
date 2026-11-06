@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { formatISTDate } from "@/lib/utils";
+import { SPORT_PRESETS } from "@/domain/sportPresets";
 import {
   ClipboardIcon,
   CheckIcon,
@@ -10,6 +11,18 @@ import {
   AddIcon,
   MatchIcon,
 } from "./Icons";
+
+export interface ScoreFieldConfig {
+  key: string;
+  label: string;
+  type?: string;
+  min?: number;
+  integer?: boolean;
+  unit?: string;
+  required?: boolean;
+  isPrimary?: boolean;
+  isActive?: boolean;
+}
 
 export interface MatchScoreItem {
   _id: string;
@@ -45,6 +58,8 @@ interface MatchScoreFormProps {
     sport: {
       _id: string;
       name: string;
+      slug?: string;
+      scoreFields?: ScoreFieldConfig[];
     };
     opponent: string;
     location?: string;
@@ -77,11 +92,55 @@ export function MatchScoreForm({
       : "";
   });
 
-  const [primaryScore, setPrimaryScore] = useState<number | "">(0);
+  // 1. Resolve dynamic score fields from sport or preset fallback
+  const sportPreset = currentMatch.sport
+    ? SPORT_PRESETS.find(
+        (p) =>
+          p.slug === currentMatch.sport.slug ||
+          p.name.toLowerCase() === (currentMatch.sport.name || "").toLowerCase()
+      )
+    : undefined;
+
+  const resolvedSportFields: ScoreFieldConfig[] =
+    currentMatch.sport?.scoreFields && currentMatch.sport.scoreFields.length > 0
+      ? currentMatch.sport.scoreFields
+      : sportPreset
+      ? (sportPreset.scoreFields as ScoreFieldConfig[])
+      : [
+          {
+            key: "score",
+            label: "Score",
+            type: "number",
+            min: 0,
+            integer: true,
+            unit: "pts",
+            required: true,
+            isPrimary: true,
+            isActive: true,
+          },
+        ];
+
+  const primaryField =
+    resolvedSportFields.find((f) => f.isPrimary && f.isActive !== false) ||
+    resolvedSportFields[0];
+
+  const secondaryFields = resolvedSportFields.filter(
+    (f) => !f.isPrimary && f.isActive !== false
+  );
+
+  const [primaryScore, setPrimaryScore] = useState<number | "">("");
+  const [secondaryStats, setSecondaryStats] = useState<Record<string, number | "">>({});
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  // Quick Inline Add Metric feature right on Match page
+  const [showAddMetric, setShowAddMetric] = useState(false);
+  const [newMetricLabel, setNewMetricLabel] = useState("");
+  const [newMetricInteger, setNewMetricInteger] = useState(true);
+  const [newMetricUnit, setNewMetricUnit] = useState("");
+  const [addingMetric, setAddingMetric] = useState(false);
 
   // Testing: Match date editing & session linking
   const [editingDate, setEditingDate] = useState(match.dateKey);
@@ -154,6 +213,63 @@ export function MatchScoreForm({
     }
   }, [unscoredEligibles, selectedPlayerId]);
 
+  function handleStepSecondary(key: string, delta: number, min: number = 0) {
+    setSecondaryStats((prev) => {
+      const current =
+        prev[key] === "" || prev[key] === undefined ? 0 : Number(prev[key]);
+      const nextVal = Math.max(min, current + delta);
+      return { ...prev, [key]: nextVal };
+    });
+  }
+
+  async function handleAddMetricToSport(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newMetricLabel.trim()) return;
+
+    setAddingMetric(true);
+    setError(null);
+
+    try {
+      const res = await fetch(`/api/sports/${currentMatch.sport._id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          addScoreField: {
+            label: newMetricLabel.trim(),
+            integer: newMetricInteger,
+            unit: newMetricUnit.trim() || undefined,
+          },
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Failed to add scoring metric");
+        return;
+      }
+
+      if (data.sport?.scoreFields) {
+        setCurrentMatch((prev) => ({
+          ...prev,
+          sport: {
+            ...prev.sport,
+            scoreFields: data.sport.scoreFields,
+          },
+        }));
+      }
+
+      setSuccess(`Added metric "${newMetricLabel.trim()}" to ${currentMatch.sport.name}!`);
+      setNewMetricLabel("");
+      setNewMetricUnit("");
+      setNewMetricInteger(true);
+      setShowAddMetric(false);
+    } catch {
+      setError("Failed to add metric to sport");
+    } finally {
+      setAddingMetric(false);
+    }
+  }
+
   async function handleAddScore(e: React.FormEvent) {
     e.preventDefault();
 
@@ -168,9 +284,34 @@ export function MatchScoreForm({
       return;
     }
 
-    if (primaryScore === "" || Number(primaryScore) < 0) {
-      setError("Score cannot be negative.");
+    if (primaryScore === "" || isNaN(Number(primaryScore))) {
+      setError(`Please enter a valid ${primaryField.label}.`);
       return;
+    }
+
+    const numScore = Number(primaryScore);
+    const minVal = primaryField.min ?? 0;
+    if (numScore < minVal) {
+      setError(`${primaryField.label} cannot be less than ${minVal}.`);
+      return;
+    }
+
+    if (primaryField.integer !== false && !Number.isInteger(numScore)) {
+      setError(`${primaryField.label} must be a whole number.`);
+      return;
+    }
+
+    // Build stats payload
+    const statsPayload: Record<string, unknown> = {};
+    statsPayload[primaryField.key] = numScore;
+    for (const f of secondaryFields) {
+      const v = secondaryStats[f.key];
+      if (v !== "" && v !== undefined && v !== null && !isNaN(Number(v))) {
+        statsPayload[f.key] = Number(v);
+      }
+    }
+    if (notes.trim()) {
+      statsPayload.notes = notes.trim();
     }
 
     setError(null);
@@ -184,9 +325,9 @@ export function MatchScoreForm({
         body: JSON.stringify({
           playerId: playerIdToSend,
           player: playerIdToSend,
-          primaryScore: Number(primaryScore),
-          score: Number(primaryScore),
-          stats: notes ? { notes } : undefined,
+          primaryScore: numScore,
+          score: numScore,
+          stats: statsPayload,
         }),
       });
 
@@ -203,7 +344,9 @@ export function MatchScoreForm({
       const newScoreItem: MatchScoreItem = {
         ...data.score,
         player:
-          data.score?.player && typeof data.score.player === "object" && data.score.player.name
+          data.score?.player &&
+          typeof data.score.player === "object" &&
+          data.score.player.name
             ? data.score.player
             : {
                 _id: playerIdToSend,
@@ -229,7 +372,8 @@ export function MatchScoreForm({
       setSelectedPlayerId(
         remaining.length > 0 ? getPlayerId(remaining[0].player) : ""
       );
-      setPrimaryScore(0);
+      setPrimaryScore("");
+      setSecondaryStats({});
       setNotes("");
       setSuccess("Match score recorded successfully!");
     } catch {
@@ -248,123 +392,132 @@ export function MatchScoreForm({
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
               <h2 className="w-full sm:w-auto text-base sm:text-xl md:text-2xl font-black text-slate-900 dark:text-white grid grid-cols-[1fr_auto_1fr] sm:flex items-center gap-2 sm:gap-3 text-center sm:text-left">
                 <span className="text-right sm:text-left truncate">Dumka Academy</span>
-                <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] sm:text-xs font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 shrink-0 self-center">
-                  vs
-                </span>
-                <span className="text-left truncate">{currentMatch.opponent}</span>
+                <span className="text-slate-400 dark:text-slate-500 font-normal shrink-0">vs</span>
+                <span className="text-left truncate text-slate-700 dark:text-slate-200">{currentMatch.opponent}</span>
               </h2>
-
-              <span className="self-center sm:self-auto inline-flex rounded-full bg-[#ADD8E6]/30 dark:bg-[#ADD8E6]/15 text-slate-900 dark:text-slate-100 border border-blue-200 dark:border-slate-700 px-2.5 py-0.5 text-xs font-bold w-fit">
+              <span className="self-center sm:self-auto inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#ADD8E6]/40 dark:bg-[#ADD8E6]/20 text-slate-900 dark:text-[#ADD8E6] border border-[#ADD8E6]">
                 {currentMatch.sport?.name}
               </span>
             </div>
 
-            <div className="flex items-center justify-center sm:justify-start gap-2 mt-1 flex-wrap">
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Date:{" "}
-                <span className="font-semibold text-slate-700 dark:text-slate-300">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
+              <div className="flex items-center gap-1.5">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">Date:</span>
+                <span className="font-medium text-slate-900 dark:text-white">
                   {formatISTDate(currentMatch.dateKey)}
                 </span>
-                {currentMatch.location && (
-                  <span className="ml-2 font-medium text-slate-600 dark:text-slate-400">
-                    • Venue: {currentMatch.location}
-                  </span>
-                )}
-              </p>
-              {!isEditingDate ? (
                 <button
                   type="button"
-                  onClick={() => {
-                    setEditingDate(currentMatch.dateKey);
-                    setIsEditingDate(true);
-                  }}
-                  className="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-[#ADD8E6]/40 dark:bg-[#ADD8E6]/20 text-slate-800 dark:text-slate-200 hover:bg-[#ADD8E6]/70 transition border border-blue-200 dark:border-slate-700"
+                  onClick={() => setIsEditingDate((v) => !v)}
+                  className="ml-1 text-[11px] font-bold text-blue-600 dark:text-blue-400 underline hover:opacity-80"
                 >
-                  Change Date (Test)
+                  {isEditingDate ? "Cancel" : "Change Date"}
                 </button>
-              ) : null}
+              </div>
+              {currentMatch.location && (
+                <div className="flex items-center gap-1">
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">Venue:</span>
+                  <span>{currentMatch.location}</span>
+                </div>
+              )}
             </div>
 
+            {/* Inline Match Date Switcher for Verification & Session Linking */}
             {isEditingDate && (
-              <div className="mt-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 space-y-2">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                    Match Date:
+              <div className="mt-4 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-2 animate-in fade-in duration-200">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Link Match to Practice Session Date
                   </span>
+                  <span className="text-[11px] text-slate-400">
+                    Matches require present practice attendance on the exact same date
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
                   <input
                     type="date"
                     value={editingDate}
                     onChange={(e) => setEditingDate(e.target.value)}
-                    className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#ADD8E6]"
+                    className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-slate-900 dark:text-white"
                   />
                   <button
                     type="button"
+                    disabled={updatingDate || editingDate === currentMatch.dateKey}
                     onClick={() => handleUpdateMatchDate(editingDate)}
-                    disabled={updatingDate}
-                    className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[#ADD8E6] text-slate-900 hover:bg-[#9cd0e2] border border-[#96cce0] transition disabled:opacity-50"
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#ADD8E6] text-slate-900 hover:bg-[#9cd0e2] disabled:opacity-50 transition"
                   >
-                    {updatingDate ? "Saving..." : "Save Date"}
+                    {updatingDate ? "Updating..." : "Update Date & Reload Attendees"}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsEditingDate(false)}
-                    className="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition"
-                  >
-                    Cancel
-                  </button>
-                </div>
 
-                {availableSessions.length > 0 && (
-                  <div className="flex items-center gap-2 flex-wrap pt-1 border-t border-slate-200 dark:border-slate-700">
-                    <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
-                      Or link to existing session:
-                    </span>
-                    <select
-                      onChange={(e) => {
-                        if (e.target.value) handleUpdateMatchDate(e.target.value);
-                      }}
-                      defaultValue=""
-                      disabled={updatingDate}
-                      className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#ADD8E6]"
-                    >
-                      <option value="" disabled>
-                        Select a practice session...
-                      </option>
-                      {availableSessions.map((s) => (
-                        <option key={s._id} value={s.dateKey}>
-                          {formatISTDate(s.dateKey)} ({s.attendanceStats?.present ?? 0} present)
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+                  {availableSessions.length > 0 && (
+                    <div className="flex items-center gap-1.5 ml-auto text-xs text-slate-500">
+                      <span>Quick Pick Session:</span>
+                      <select
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            setEditingDate(e.target.value);
+                            handleUpdateMatchDate(e.target.value);
+                          }
+                        }}
+                        defaultValue=""
+                        className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 text-xs text-slate-900 dark:text-white"
+                      >
+                        <option value="" disabled>Select Practice Date</option>
+                        {availableSessions.map((s) => (
+                          <option key={s._id} value={s.dateKey}>
+                            {s.dateKey} ({s.attendanceStats?.present ?? 0} present)
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
 
-          <div className="flex items-center justify-center sm:justify-end gap-3">
-            <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-              {scores.length} Player Scores Recorded
-            </span>
+          {/* Quick Roster Stats Banner */}
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-center">
+              <span className="block text-lg font-black text-slate-900 dark:text-white">
+                {eligiblePlayers.length}
+              </span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Practice Attendees
+              </span>
+            </div>
+            <div className="px-3.5 py-2 rounded-xl bg-[#ADD8E6]/25 dark:bg-[#ADD8E6]/10 border border-[#ADD8E6]/40 dark:border-slate-700 text-center">
+              <span className="block text-lg font-black text-slate-900 dark:text-white">
+                {scores.length}
+              </span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Scores Recorded
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
+      {/* Main Grid: Score Entry Form + Recorded Scores Table */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Record Score Form Card */}
-        <div className="lg:col-span-1 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#18202c] p-6 shadow-xs h-fit transition-colors">
-          <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">
-            Record Player Score
-          </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-            Select an eligible player from today&apos;s practice attendance list.
-          </p>
+        {/* Score Recording Form Card */}
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#18202c] p-4 sm:p-6 shadow-xs transition-colors">
+          <div className="mb-4">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">
+              Record Athlete Score
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Strict Rule: Athlete must be verified present in practice on this match date.
+            </p>
+          </div>
 
           {unscoredEligibles.length === 0 ? (
-            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 p-6 text-center text-slate-500 dark:text-slate-400 text-xs">
-              <ClipboardIcon className="w-7 h-7 mx-auto mb-2 text-slate-400 dark:text-slate-500" />
-              <p className="font-bold text-slate-700 dark:text-slate-200">
-                No Unscored Eligible Players
+            <div className="p-6 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-dashed border-slate-200 dark:border-slate-700 text-center">
+              <ClipboardIcon className="w-8 h-8 mx-auto text-slate-400 mb-2" />
+              <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                {eligiblePlayers.length === 0
+                  ? "No practice attendance found"
+                  : "All attendees scored"}
               </p>
               <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
                 {eligiblePlayers.length === 0
@@ -376,7 +529,7 @@ export function MatchScoreForm({
             <form onSubmit={handleAddScore} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
-                  Eligible Player
+                  Eligible Athlete
                 </label>
                 <select
                   value={selectedPlayerId}
@@ -399,32 +552,193 @@ export function MatchScoreForm({
                 </span>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
-                  Primary Score (Goals / Points / Runs)
-                </label>
+              {/* Dynamic Primary Field Input */}
+              <div className="p-3.5 rounded-xl border border-[#ADD8E6]/60 dark:border-slate-700 bg-[#ADD8E6]/10 dark:bg-slate-800/60 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                    Primary: {primaryField.label}
+                    {primaryField.unit ? ` (${primaryField.unit})` : ""}
+                  </label>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#ADD8E6] text-slate-900">
+                    Headline
+                  </span>
+                </div>
                 <input
                   type="number"
-                  min="0"
-                  step="1"
+                  min={primaryField.min ?? 0}
+                  step={primaryField.integer === false ? "0.01" : "1"}
+                  placeholder={
+                    primaryField.integer === false
+                      ? "e.g. 31.42 (decimals allowed)"
+                      : "e.g. 45 (whole number)"
+                  }
                   value={primaryScore}
                   onChange={(e) =>
                     setPrimaryScore(
                       e.target.value === "" ? "" : Number(e.target.value)
                     )
                   }
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2.5 text-xs sm:text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#ADD8E6]/40 focus:border-[#ADD8E6]"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-xs sm:text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#ADD8E6]"
                   required
                 />
+                <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                  {primaryField.integer === false
+                    ? "Decimal values supported (e.g. swim times in seconds)"
+                    : "Must be a whole integer"}
+                </p>
               </div>
 
+              {/* Secondary Scoring Metrics Stepper Grid */}
+              <div className="space-y-2 pt-1">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    Optional Stats
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddMetric((v) => !v)}
+                    className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                  >
+                    <AddIcon className="w-3 h-3" />
+                    {showAddMetric ? "Cancel" : "Add Metric to Sport"}
+                  </button>
+                </div>
+
+                {/* Inline Metric Creator */}
+                {showAddMetric && (
+                  <div className="p-3 rounded-xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/50 dark:bg-blue-950/20 space-y-2 animate-in fade-in duration-200">
+                    <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 block">
+                      Add New Stat to {currentMatch.sport?.name} (e.g. Sixes, Tackles, Assists)
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <input
+                        type="text"
+                        placeholder="Metric name (e.g. Catches)"
+                        value={newMetricLabel}
+                        onChange={(e) => setNewMetricLabel(e.target.value)}
+                        className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs text-slate-900 dark:text-white"
+                        required
+                      />
+                      <select
+                        value={newMetricInteger ? "int" : "dec"}
+                        onChange={(e) => setNewMetricInteger(e.target.value === "int")}
+                        className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 text-xs text-slate-900 dark:text-white"
+                      >
+                        <option value="int">Whole Number</option>
+                        <option value="dec">Decimal</option>
+                      </select>
+                      <input
+                        type="text"
+                        placeholder="Unit (e.g. s, pts)"
+                        value={newMetricUnit}
+                        onChange={(e) => setNewMetricUnit(e.target.value)}
+                        className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs text-slate-900 dark:text-white"
+                      />
+                    </div>
+                    <div className="flex justify-end gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setShowAddMetric(false)}
+                        className="px-2.5 py-1 text-[11px] font-semibold text-slate-500 hover:text-slate-800"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        disabled={addingMetric || !newMetricLabel.trim()}
+                        onClick={handleAddMetricToSport}
+                        className="px-3 py-1 rounded-lg text-[11px] font-bold bg-[#ADD8E6] text-slate-900 hover:bg-[#9cd0e2] disabled:opacity-50 transition"
+                      >
+                        {addingMetric ? "Adding..." : "Save Metric"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {secondaryFields.length === 0 ? (
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 italic p-2 border border-dashed rounded-lg border-slate-200 dark:border-slate-700">
+                    No optional metrics configured for this sport. Click &ldquo;Add Metric to Sport&rdquo; above to add one.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-1 gap-2.5">
+                    {secondaryFields.map((field) => {
+                      const val = secondaryStats[field.key] ?? "";
+                      const isDec = field.integer === false;
+
+                      return (
+                        <div
+                          key={field.key}
+                          className="flex items-center justify-between p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60"
+                        >
+                          <div>
+                            <span className="text-xs font-bold text-slate-900 dark:text-white block">
+                              {field.label}
+                            </span>
+                            {field.unit && (
+                              <span className="text-[10px] text-slate-400">
+                                unit: {field.unit}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            {!isDec && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleStepSecondary(field.key, -1, field.min ?? 0)
+                                }
+                                className="w-7 h-7 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 text-sm flex items-center justify-center transition"
+                              >
+                                -
+                              </button>
+                            )}
+
+                            <input
+                              type="number"
+                              min={field.min ?? 0}
+                              step={isDec ? "0.01" : "1"}
+                              value={val}
+                              placeholder="0"
+                              onChange={(e) =>
+                                setSecondaryStats((prev) => ({
+                                  ...prev,
+                                  [field.key]:
+                                    e.target.value === ""
+                                      ? ""
+                                      : Number(e.target.value),
+                                }))
+                              }
+                              className="w-16 text-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 py-1 text-xs text-slate-900 dark:text-white font-bold"
+                            />
+
+                            {!isDec && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleStepSecondary(field.key, 1, field.min ?? 0)
+                                }
+                                className="w-7 h-7 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 text-sm flex items-center justify-center transition"
+                              >
+                                +
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Coach Observations / Notes */}
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
-                  Match Notes / Stats (Optional)
+                  Coach Notes / Observations (Optional)
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. 2 assists, 1 clean tackle, MVP"
+                  placeholder="e.g. Excellent defensive footing, clutch score"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2 text-xs sm:text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#ADD8E6]/40 focus:border-[#ADD8E6] placeholder:text-slate-400 dark:placeholder:text-slate-500"
@@ -519,16 +833,47 @@ export function MatchScoreForm({
                       <div className="mt-3.5 p-3 rounded-xl bg-white dark:bg-[#18202c] border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between shadow-xs">
                         <div>
                           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
-                            Match Score
+                            {primaryField.label}
                           </span>
                           <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                            {match.sport?.name || "Official"} Score
+                            Headline Score
                           </span>
                         </div>
-                        <span className="text-2xl font-black text-slate-900 dark:text-white px-3 py-1 rounded-xl bg-[#ADD8E6]/35 dark:bg-[#ADD8E6]/15 border border-[#ADD8E6]/60 dark:border-slate-700 shadow-xs">
-                          {score.primaryScore}
-                        </span>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-2xl font-black text-slate-900 dark:text-white px-3 py-1 rounded-xl bg-[#ADD8E6]/35 dark:bg-[#ADD8E6]/15 border border-[#ADD8E6]/60 dark:border-slate-700 shadow-xs">
+                            {score.primaryScore}
+                          </span>
+                          {primaryField.unit && (
+                            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                              {primaryField.unit}
+                            </span>
+                          )}
+                        </div>
                       </div>
+
+                      {/* Secondary metrics pills */}
+                      {secondaryFields.length > 0 &&
+                        score.stats &&
+                        typeof score.stats === "object" && (
+                          <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
+                            {secondaryFields.map((f) => {
+                              const val = (score.stats as Record<string, unknown>)?.[f.key];
+                              if (typeof val !== "number") return null;
+                              return (
+                                <span
+                                  key={f.key}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-200/70 dark:bg-slate-700/60 text-slate-800 dark:text-slate-200 text-xs font-semibold"
+                                >
+                                  <span className="font-bold">{val}</span>
+                                  <span className="text-[10px] text-slate-600 dark:text-slate-400">
+                                    {f.label}
+                                    {f.unit ? ` (${f.unit})` : ""}
+                                  </span>
+                                </span>
+                              );
+                            })}
+                          </div>
+                        )}
                     </div>
 
                     {/* Match Notes / Observations */}

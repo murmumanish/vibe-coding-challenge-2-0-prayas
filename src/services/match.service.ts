@@ -9,6 +9,8 @@ import Player from "@/models/Player";
 import User from "@/models/User";
 import { AppError } from "@/lib/errors";
 import { canScoreMatch } from "@/domain/matchEligibility";
+import { validateStats } from "@/domain/stats";
+import { SPORT_PRESETS } from "@/domain/sportPresets";
 import { Types } from "mongoose";
 
 export interface CreateMatchInput {
@@ -71,7 +73,7 @@ export async function getAllMatches(options?: {
 
   void User;
   const matches = await Match.find(filter)
-    .populate("sport", "name slug isActive")
+    .populate("sport", "name slug isActive scoreFields")
     .populate("createdBy", "name email")
     .sort({ dateKey: -1, createdAt: -1 })
     .lean();
@@ -94,10 +96,26 @@ export async function getAllMatches(options?: {
     countMap.set(item._id.toString(), item.count);
   }
 
-  return matches.map((m) => ({
-    ...m,
-    scoresCount: countMap.get(m._id.toString()) || 0,
-  }));
+  return matches.map((m) => {
+    if (m.sport && typeof m.sport === "object") {
+      const s = m.sport as any;
+      if (!s.scoreFields || s.scoreFields.length === 0) {
+        const preset = SPORT_PRESETS.find(
+          (p) =>
+            p.slug === s.slug ||
+            p.name.toLowerCase() === (s.name || "").toLowerCase()
+        );
+        if (preset) {
+          s.scoreFields = preset.scoreFields;
+          s.isPreset = true;
+        }
+      }
+    }
+    return {
+      ...m,
+      scoresCount: countMap.get(m._id.toString()) || 0,
+    };
+  });
 }
 
 /**
@@ -106,12 +124,28 @@ export async function getAllMatches(options?: {
 export async function getMatchById(id: string) {
   await dbConnect();
   const match = await Match.findById(id)
-    .populate("sport", "name slug isActive")
+    .populate("sport", "name slug isActive scoreFields")
     .populate("createdBy", "name email")
     .lean();
 
   if (!match) {
     throw new AppError("Match not found", 404);
+  }
+
+  // Ensure sport.scoreFields is populated (backfill from preset if missing)
+  if (match.sport && typeof match.sport === "object") {
+    const s = match.sport as any;
+    if (!s.scoreFields || s.scoreFields.length === 0) {
+      const preset = SPORT_PRESETS.find(
+        (p) =>
+          p.slug === s.slug ||
+          p.name.toLowerCase() === (s.name || "").toLowerCase()
+      );
+      if (preset) {
+        s.scoreFields = preset.scoreFields;
+        s.isPreset = true;
+      }
+    }
   }
 
   return match;
@@ -192,6 +226,7 @@ export async function getEligiblePlayersForMatch(matchId: string) {
  * - Must have attended a practice session for this exact sport on this exact dateKey.
  * - Attendance in that session must be 'present'.
  * - Rejects absent players, different sports, or missing sessions with 400.
+ * - Validates stats and primary score against sport scoreFields.
  */
 export async function addMatchScore(data: AddScoreInput): Promise<IMatchScore> {
   await dbConnect();
@@ -265,12 +300,69 @@ export async function addMatchScore(data: AddScoreInput): Promise<IMatchScore> {
     );
   }
 
-  // 5. Create MatchScore
+  // 5. Validate stats and primary score against sport scoreFields
+  let sportDoc: any = null;
+  if (match.sport && typeof match.sport === "object" && (match.sport as any).name) {
+    sportDoc = match.sport;
+  } else if (match.sport) {
+    const sportQuery = Sport.findById(match.sport);
+    sportDoc =
+      sportQuery && typeof (sportQuery as any).lean === "function"
+        ? await (sportQuery as any).lean()
+        : await sportQuery;
+  }
+
+  let scoreFields = sportDoc?.scoreFields;
+  if (!scoreFields || scoreFields.length === 0) {
+    const slug = sportDoc?.slug;
+    const name = sportDoc?.name;
+    const preset = SPORT_PRESETS.find(
+      (p) =>
+        (slug && p.slug === slug) ||
+        (name && p.name.toLowerCase() === name.toLowerCase())
+    );
+    if (preset) {
+      scoreFields = preset.scoreFields;
+      if (sportDoc?._id && typeof (Sport as any).findByIdAndUpdate === "function") {
+        const updatePromise = Sport.findByIdAndUpdate(sportDoc._id, {
+          scoreFields: preset.scoreFields,
+          isPreset: true,
+        });
+        if (updatePromise && typeof (updatePromise as any).exec === "function") {
+          (updatePromise as any).exec().catch(() => {});
+        }
+      }
+    }
+  }
+
+  const statsPayload = {
+    primaryScore: data.primaryScore,
+    ...(data.stats || {}),
+  };
+
+  const validation = validateStats(scoreFields, statsPayload);
+  if (!validation.isValid) {
+    const firstError = Object.values(validation.errors)[0] || "Invalid score";
+    throw new AppError(firstError, 400);
+  }
+
+  const primaryScore = validation.primaryScore ?? data.primaryScore;
+  const finalStats: Record<string, unknown> = { ...validation.validatedStats };
+  if (
+    typeof (data.stats as any)?.notes === "string" &&
+    (data.stats as any).notes.trim()
+  ) {
+    finalStats.notes = (data.stats as any).notes.trim();
+  }
+
+  const statsToSave = data.stats !== undefined ? finalStats : undefined;
+
+  // 6. Create MatchScore
   const score = await MatchScore.create({
     match: match._id,
     player: player._id,
-    primaryScore: data.primaryScore,
-    stats: data.stats,
+    primaryScore,
+    stats: statsToSave,
     createdBy: new Types.ObjectId(data.createdBy),
   });
 

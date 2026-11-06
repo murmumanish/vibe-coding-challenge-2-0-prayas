@@ -2,6 +2,7 @@
 import dns from "node:dns";
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import { SPORT_PRESETS } from "../src/domain/sportPresets";
 
 // Force public DNS to avoid ISP/Windows SRV query failures
 try {
@@ -10,7 +11,6 @@ try {
   // Ignore in environments where setting DNS servers is restricted
 }
 
-// Direct import of model schemas to avoid Next.js-specific globals
 const MONGODB_URI = process.env.MONGODB_URI!;
 
 if (!MONGODB_URI) {
@@ -31,11 +31,28 @@ const UserSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+const ScoreFieldSchema = new mongoose.Schema(
+  {
+    key: { type: String, required: true },
+    label: { type: String, required: true },
+    type: { type: String, default: "number" },
+    min: { type: Number, default: 0 },
+    integer: { type: Boolean, default: true },
+    unit: { type: String },
+    required: { type: Boolean, default: false },
+    isPrimary: { type: Boolean, default: false },
+    isActive: { type: Boolean, default: true },
+  },
+  { _id: false }
+);
+
 const SportSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
     slug: { type: String, required: true, unique: true, lowercase: true },
+    isPreset: { type: Boolean, default: true },
     isActive: { type: Boolean, default: true },
+    scoreFields: [ScoreFieldSchema],
   },
   { timestamps: true }
 );
@@ -71,16 +88,18 @@ async function seed() {
   });
   console.log(`✅ Scout created: ${scout.email}`);
 
-  // ─── Create 3 Starter Sports ──────────────────────────────────────
-  const sports = [
-    { name: "Cricket", slug: "cricket" },
-    { name: "Football", slug: "football" },
-    { name: "Kabaddi", slug: "kabaddi" },
-  ];
-
-  for (const sport of sports) {
-    await Sport.create(sport);
-    console.log(`✅ Sport created: ${sport.name}`);
+  // ─── Create 10 Dumka Academy Sports Presets ───────────────────────
+  for (const preset of SPORT_PRESETS) {
+    const primaryLabel =
+      preset.scoreFields.find((f) => f.isPrimary)?.label || "Score";
+    await Sport.create({
+      name: preset.name,
+      slug: preset.slug,
+      scoreFields: preset.scoreFields,
+      isPreset: true,
+      isActive: true,
+    });
+    console.log(`✅ Sport created: ${preset.name} (Primary: ${primaryLabel})`);
   }
 
   console.log("\n🎉 Seed completed successfully!");

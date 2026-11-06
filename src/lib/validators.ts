@@ -8,9 +8,37 @@ export const loginSchema = z.object({
 });
 
 // ─── Sports ──────────────────────────────────────────────────────────
-export const createSportSchema = z.object({
-  name: z.string().min(1, "Sport name is required").max(100),
+export const scoreFieldInputSchema = z.object({
+  key: z
+    .string()
+    .regex(
+      /^[a-zA-Z][a-zA-Z0-9_]*$/,
+      "Key must start with a letter and contain only letters, numbers, and underscores"
+    )
+    .optional(),
+  label: z.string().min(1, "Field label is required").max(40),
+  type: z.literal("number").default("number"),
+  min: z.number().default(0),
+  integer: z.boolean().default(true),
+  unit: z.string().max(10).optional().or(z.literal("")),
+  required: z.boolean().default(false),
+  isPrimary: z.boolean().default(false),
+  isActive: z.boolean().default(true),
 });
+
+export const createSportSchema = z
+  .object({
+    name: z.string().max(40).optional().or(z.literal("")),
+    presetSlug: z.string().optional(),
+    scoreFields: z.array(scoreFieldInputSchema).optional(),
+  })
+  .refine(
+    (data) => (data.name && data.name.trim().length > 0) || Boolean(data.presetSlug),
+    {
+      message: "Either a sport name or a preset must be selected",
+      path: ["name"],
+    }
+  );
 
 // ─── Players ─────────────────────────────────────────────────────────
 export const createPlayerSchema = z
