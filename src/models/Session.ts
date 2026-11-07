@@ -31,6 +31,7 @@ const SessionSchema = new Schema<ISession>(
 
 // Enforces one session per sport per day
 SessionSchema.index({ dateKey: 1, sport: 1 }, { unique: true });
+SessionSchema.index({ dateKey: -1, sport: 1 });
 
 const Session: Model<ISession> =
   mongoose.models.Session ||

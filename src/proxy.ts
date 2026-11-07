@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
+const PUBLIC_PATHS = ["/", "/login", "/api/sports/public"];
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -24,7 +26,7 @@ export async function proxy(request: NextRequest) {
 
   // Unauthenticated user
   if (!token) {
-    if (pathname === "/login") {
+    if (PUBLIC_PATHS.includes(pathname)) {
       return NextResponse.next();
     }
     const loginUrl = new URL("/login", request.url);
@@ -42,12 +44,20 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL(`/${role}`, request.url));
     }
 
-    // Root path / -> redirect to role dashboard
+    // Root path / -> redirect to role dashboard for logged-in users
     if (pathname === "/") {
       return NextResponse.redirect(new URL(`/${role}`, request.url));
     }
 
+    // Sports section removed from coach portal; redirect to coach dashboard
+    if (pathname.startsWith("/coach/sports")) {
+      return NextResponse.redirect(new URL("/coach", request.url));
+    }
+
     // Role-based route guarding
+    if (pathname.startsWith("/admin") && role !== "admin") {
+      return NextResponse.redirect(new URL(`/${role}`, request.url));
+    }
     if (pathname.startsWith("/coach") && role !== "coach") {
       return NextResponse.redirect(new URL(`/${role}`, request.url));
     }
@@ -60,7 +70,12 @@ export async function proxy(request: NextRequest) {
 
     return NextResponse.next();
   } catch {
-    // If token is invalid or expired, clear cookie and redirect to /login
+    // If token is invalid or expired, clear cookie
+    if (pathname === "/") {
+      const response = NextResponse.redirect(new URL("/", request.url));
+      response.cookies.delete("token");
+      return response;
+    }
     const response = NextResponse.redirect(new URL("/login", request.url));
     response.cookies.delete("token");
     return response;

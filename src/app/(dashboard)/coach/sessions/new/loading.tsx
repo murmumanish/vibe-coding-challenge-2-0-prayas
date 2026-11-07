@@ -4,14 +4,8 @@ import { Skeleton } from "@/components/Skeleton";
 export default function NewSessionLoading() {
   return (
     <div className="space-y-6 animate-in fade-in duration-200 max-w-2xl">
+      {/* Title Skeleton without breadcrumb */}
       <div>
-        <div className="flex items-center gap-2 mb-2">
-          <Skeleton className="h-3 w-16" />
-          <Skeleton className="h-3 w-3" />
-          <Skeleton className="h-3 w-16" />
-          <Skeleton className="h-3 w-3" />
-          <Skeleton className="h-3 w-10" />
-        </div>
         <Skeleton className="h-7 w-56 rounded-xl mb-1.5" />
         <Skeleton className="h-4 w-96 max-w-full rounded-lg" />
       </div>

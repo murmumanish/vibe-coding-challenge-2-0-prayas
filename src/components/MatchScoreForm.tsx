@@ -73,6 +73,86 @@ function getPlayerId(player: { _id?: string; id?: string } | undefined): string 
   return String(player._id || player.id || "");
 }
 
+
+export interface ScoreParamItem {
+  key: string;
+  label: string;
+  value: string | number;
+  unit?: string;
+}
+
+export function getScoreParameters(
+  score: MatchScoreItem,
+  sportFields: ScoreFieldConfig[],
+  primaryField: ScoreFieldConfig
+): ScoreParamItem[] {
+  const result: ScoreParamItem[] = [];
+  const seenKeys = new Set<string>();
+
+  // 1. Process all configured sport fields in order
+  for (const f of sportFields) {
+    if (f.isActive === false) continue;
+    seenKeys.add(f.key);
+
+    let val: any = undefined;
+    if (f.isPrimary || f.key === primaryField.key) {
+      val = score.primaryScore;
+    } else if (score.stats && typeof score.stats === "object") {
+      val = (score.stats as Record<string, unknown>)[f.key];
+    }
+
+    if (val === undefined || val === null || val === "") {
+      val = 0;
+    }
+
+    result.push({
+      key: f.key,
+      label: f.label,
+      value: val,
+      unit: f.unit,
+    });
+  }
+
+  // 2. Also check if there are additional recorded stats not in sportFields (except notes)
+  if (score.stats && typeof score.stats === "object") {
+    for (const [k, v] of Object.entries(score.stats as Record<string, unknown>)) {
+      if (
+        k === "notes" ||
+        k === "primaryScore" ||
+        k === "score" ||
+        k.toLowerCase() === "score" ||
+        k === "_id" ||
+        seenKeys.has(k)
+      ) {
+        continue;
+      }
+      if (typeof v === "number" || typeof v === "string") {
+        const prettyLabel = k
+          .replace(/([A-Z])/g, " $1")
+          .replace(/^./, (s) => s.toUpperCase())
+          .trim();
+        result.push({
+          key: k,
+          label: prettyLabel,
+          value: v,
+        });
+      }
+    }
+  }
+
+  // Fallback: If result is empty, at least show primary score
+  if (result.length === 0) {
+    result.push({
+      key: primaryField.key || "score",
+      label: primaryField.label || "Score",
+      value: score.primaryScore,
+      unit: primaryField.unit,
+    });
+  }
+
+  return result;
+}
+
 export function MatchScoreForm({
   match,
   initialScores,
@@ -386,16 +466,16 @@ export function MatchScoreForm({
   return (
     <div className="space-y-6">
       {/* Match Overview Header */}
-      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#18202c] p-4 sm:p-6 shadow-xs transition-colors">
+      <div className="rounded-2xl border border-card-border bg-card p-4 sm:p-6 shadow-xs transition-colors">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="w-full sm:w-auto">
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
-              <h2 className="w-full sm:w-auto text-base sm:text-xl md:text-2xl font-black text-slate-900 dark:text-white grid grid-cols-[1fr_auto_1fr] sm:flex items-center gap-2 sm:gap-3 text-center sm:text-left">
+              <h2 className="w-full sm:w-auto text-base sm:text-xl md:text-2xl font-black text-foreground grid grid-cols-[1fr_auto_1fr] sm:flex items-center gap-2 sm:gap-3 text-center sm:text-left">
                 <span className="text-right sm:text-left truncate">Dumka Academy</span>
                 <span className="text-slate-400 dark:text-slate-500 font-normal shrink-0">vs</span>
                 <span className="text-left truncate text-slate-700 dark:text-slate-200">{currentMatch.opponent}</span>
               </h2>
-              <span className="self-center sm:self-auto inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#ADD8E6]/40 dark:bg-[#ADD8E6]/20 text-slate-900 dark:text-[#ADD8E6] border border-[#ADD8E6]">
+              <span className="self-center sm:self-auto inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary-container text-foreground border border-card-border">
                 {currentMatch.sport?.name}
               </span>
             </div>
@@ -403,7 +483,7 @@ export function MatchScoreForm({
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
               <div className="flex items-center gap-1.5">
                 <span className="font-semibold text-slate-700 dark:text-slate-300">Date:</span>
-                <span className="font-medium text-slate-900 dark:text-white">
+                <span className="font-medium text-foreground">
                   {formatISTDate(currentMatch.dateKey)}
                 </span>
                 <button
@@ -438,13 +518,13 @@ export function MatchScoreForm({
                     type="date"
                     value={editingDate}
                     onChange={(e) => setEditingDate(e.target.value)}
-                    className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-slate-900 dark:text-white"
+                    className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-foreground"
                   />
                   <button
                     type="button"
                     disabled={updatingDate || editingDate === currentMatch.dateKey}
                     onClick={() => handleUpdateMatchDate(editingDate)}
-                    className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#ADD8E6] text-slate-900 hover:bg-[#9cd0e2] disabled:opacity-50 transition"
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold bg-primary text-primary-foreground hover:bg-[#9cd0e2] disabled:opacity-50 transition"
                   >
                     {updatingDate ? "Updating..." : "Update Date & Reload Attendees"}
                   </button>
@@ -460,7 +540,7 @@ export function MatchScoreForm({
                           }
                         }}
                         defaultValue=""
-                        className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 text-xs text-slate-900 dark:text-white"
+                        className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 text-xs text-foreground"
                       >
                         <option value="" disabled>Select Practice Date</option>
                         {availableSessions.map((s) => (
@@ -479,15 +559,15 @@ export function MatchScoreForm({
           {/* Quick Roster Stats Banner */}
           <div className="flex items-center gap-3 shrink-0">
             <div className="px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-center">
-              <span className="block text-lg font-black text-slate-900 dark:text-white">
+              <span className="block text-lg font-black text-foreground">
                 {eligiblePlayers.length}
               </span>
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 Practice Attendees
               </span>
             </div>
-            <div className="px-3.5 py-2 rounded-xl bg-[#ADD8E6]/25 dark:bg-[#ADD8E6]/10 border border-[#ADD8E6]/40 dark:border-slate-700 text-center">
-              <span className="block text-lg font-black text-slate-900 dark:text-white">
+            <div className="px-3.5 py-2 rounded-xl bg-primary-container border border-card-border text-center">
+              <span className="block text-lg font-black text-foreground">
                 {scores.length}
               </span>
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -501,9 +581,9 @@ export function MatchScoreForm({
       {/* Main Grid: Score Entry Form + Recorded Scores Table */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Score Recording Form Card */}
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#18202c] p-4 sm:p-6 shadow-xs transition-colors">
+        <div className="rounded-2xl border border-card-border bg-card p-4 sm:p-6 shadow-xs transition-colors">
           <div className="mb-4">
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">
+            <h3 className="text-base font-bold text-foreground">
               Record Athlete Score
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -553,13 +633,13 @@ export function MatchScoreForm({
               </div>
 
               {/* Dynamic Primary Field Input */}
-              <div className="p-3.5 rounded-xl border border-[#ADD8E6]/60 dark:border-slate-700 bg-[#ADD8E6]/10 dark:bg-slate-800/60 space-y-1.5">
+              <div className="p-3.5 rounded-xl border border-card-border bg-slate-50 dark:bg-slate-800/60 space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                    Primary: {primaryField.label}
+                    {primaryField.label}
                     {primaryField.unit ? ` (${primaryField.unit})` : ""}
                   </label>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#ADD8E6] text-slate-900">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary text-primary-foreground">
                     Headline
                   </span>
                 </div>
@@ -592,7 +672,7 @@ export function MatchScoreForm({
               <div className="space-y-2 pt-1">
                 <div className="flex items-center justify-between">
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                    Optional Stats
+                    Additional Sport Parameters
                   </label>
                   <button
                     type="button"
@@ -616,13 +696,13 @@ export function MatchScoreForm({
                         placeholder="Metric name (e.g. Catches)"
                         value={newMetricLabel}
                         onChange={(e) => setNewMetricLabel(e.target.value)}
-                        className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs text-slate-900 dark:text-white"
+                        className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs text-foreground"
                         required
                       />
                       <select
                         value={newMetricInteger ? "int" : "dec"}
                         onChange={(e) => setNewMetricInteger(e.target.value === "int")}
-                        className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 text-xs text-slate-900 dark:text-white"
+                        className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 text-xs text-foreground"
                       >
                         <option value="int">Whole Number</option>
                         <option value="dec">Decimal</option>
@@ -632,7 +712,7 @@ export function MatchScoreForm({
                         placeholder="Unit (e.g. s, pts)"
                         value={newMetricUnit}
                         onChange={(e) => setNewMetricUnit(e.target.value)}
-                        className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs text-slate-900 dark:text-white"
+                        className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs text-foreground"
                       />
                     </div>
                     <div className="flex justify-end gap-2 pt-1">
@@ -647,7 +727,7 @@ export function MatchScoreForm({
                         type="button"
                         disabled={addingMetric || !newMetricLabel.trim()}
                         onClick={handleAddMetricToSport}
-                        className="px-3 py-1 rounded-lg text-[11px] font-bold bg-[#ADD8E6] text-slate-900 hover:bg-[#9cd0e2] disabled:opacity-50 transition"
+                        className="px-3 py-1 rounded-lg text-[11px] font-bold bg-primary text-primary-foreground hover:bg-[#9cd0e2] disabled:opacity-50 transition"
                       >
                         {addingMetric ? "Adding..." : "Save Metric"}
                       </button>
@@ -671,7 +751,7 @@ export function MatchScoreForm({
                           className="flex items-center justify-between p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60"
                         >
                           <div>
-                            <span className="text-xs font-bold text-slate-900 dark:text-white block">
+                            <span className="text-xs font-bold text-foreground block">
                               {field.label}
                             </span>
                             {field.unit && (
@@ -709,7 +789,7 @@ export function MatchScoreForm({
                                       : Number(e.target.value),
                                 }))
                               }
-                              className="w-16 text-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 py-1 text-xs text-slate-900 dark:text-white font-bold"
+                              className="w-16 text-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 py-1 text-xs text-foreground font-bold"
                             />
 
                             {!isDec && (
@@ -759,7 +839,7 @@ export function MatchScoreForm({
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#ADD8E6] py-2.5 text-xs font-bold text-slate-900 hover:bg-[#9cd0e2] border border-[#96cce0] shadow-xs disabled:opacity-50 transition"
+                className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary py-2.5 text-xs font-bold text-primary-foreground hover:bg-primary-hover border border-card-border shadow-xs disabled:opacity-50 transition"
               >
                 <AddIcon className="w-4 h-4" />
                 {submitting ? "Saving Score..." : "Record Score"}
@@ -769,10 +849,10 @@ export function MatchScoreForm({
         </div>
 
         {/* Scores Table Card */}
-        <div className="lg:col-span-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#18202c] shadow-xs overflow-hidden transition-colors">
+        <div className="lg:col-span-2 rounded-2xl border border-card-border bg-card shadow-xs overflow-hidden transition-colors">
           <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
             <div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+              <h3 className="text-base font-bold text-foreground">
                 Official Match Scores
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -786,7 +866,7 @@ export function MatchScoreForm({
 
           {scores.length === 0 ? (
             <div className="p-12 text-center text-slate-400 dark:text-slate-500">
-              <div className="w-12 h-12 mx-auto rounded-2xl bg-[#ADD8E6]/25 dark:bg-[#ADD8E6]/10 text-slate-800 dark:text-[#ADD8E6] flex items-center justify-center mb-3">
+              <div className="w-12 h-12 mx-auto rounded-2xl bg-primary-container text-slate-800 dark:text-[#ADD8E6] flex items-center justify-center mb-3">
                 <MatchIcon className="w-6 h-6" />
               </div>
               <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
@@ -801,20 +881,26 @@ export function MatchScoreForm({
             <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               {scores.map((score) => {
                 const notes = (score.stats as { notes?: string })?.notes;
+                const parameters = getScoreParameters(
+                  score,
+                  resolvedSportFields,
+                  primaryField
+                );
+
                 return (
                   <div
                     key={score._id}
-                    className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-4 shadow-xs hover:shadow-sm hover:border-[#ADD8E6] transition-all flex flex-col justify-between"
+                    className="rounded-2xl border border-card-border bg-card p-4 sm:p-5 shadow-xs hover:shadow-sm hover:border-primary transition-all flex flex-col justify-between"
                   >
                     <div>
                       {/* Athlete Identity Row */}
-                      <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start justify-between gap-3 mb-3">
                         <div className="flex items-center gap-3 min-w-0">
-                          <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-[#ADD8E6] text-slate-900 border border-blue-200 font-black text-sm shrink-0 shadow-xs">
+                          <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary-container text-foreground font-black text-sm shrink-0 shadow-xs">
                             {score.player?.name?.charAt(0) || "P"}
                           </span>
                           <div className="min-w-0">
-                            <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                            <h4 className="text-sm sm:text-base font-bold text-foreground truncate">
                               {score.player?.name}
                             </h4>
                             <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
@@ -829,56 +915,33 @@ export function MatchScoreForm({
                         </span>
                       </div>
 
-                      {/* Performance Score Box */}
-                      <div className="mt-3.5 p-3 rounded-xl bg-white dark:bg-[#18202c] border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between shadow-xs">
-                        <div>
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
-                            {primaryField.label}
-                          </span>
-                          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                            Headline Score
-                          </span>
-                        </div>
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-2xl font-black text-slate-900 dark:text-white px-3 py-1 rounded-xl bg-[#ADD8E6]/35 dark:bg-[#ADD8E6]/15 border border-[#ADD8E6]/60 dark:border-slate-700 shadow-xs">
-                            {score.primaryScore}
-                          </span>
-                          {primaryField.unit && (
-                            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                              {primaryField.unit}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Secondary metrics pills */}
-                      {secondaryFields.length > 0 &&
-                        score.stats &&
-                        typeof score.stats === "object" && (
-                          <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
-                            {secondaryFields.map((f) => {
-                              const val = (score.stats as Record<string, unknown>)?.[f.key];
-                              if (typeof val !== "number") return null;
-                              return (
-                                <span
-                                  key={f.key}
-                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-200/70 dark:bg-slate-700/60 text-slate-800 dark:text-slate-200 text-xs font-semibold"
-                                >
-                                  <span className="font-bold">{val}</span>
-                                  <span className="text-[10px] text-slate-600 dark:text-slate-400">
-                                    {f.label}
-                                    {f.unit ? ` (${f.unit})` : ""}
-                                  </span>
+                      {/* Match Performance Parameters (All Equally Represented) */}
+                      <div className="rounded-xl border border-card-border bg-slate-50/70 dark:bg-slate-800/40 p-2.5 sm:p-3 shadow-2xs divide-y divide-card-border">
+                        {parameters.map((param) => (
+                          <div
+                            key={param.key}
+                            className="flex items-center justify-between py-1.5 sm:py-2 first:pt-0 last:pb-0 text-xs sm:text-sm font-semibold"
+                          >
+                            <span className="font-bold text-foreground flex items-center gap-1">
+                              <span>{param.label}</span>
+                              {param.unit && (
+                                <span className="text-[11px] font-normal text-slate-400">
+                                  ({param.unit})
                                 </span>
-                              );
-                            })}
+                              )}
+                              <span className="text-slate-400 font-bold ml-0.5">:</span>
+                            </span>
+                            <span className="font-black text-foreground text-xs sm:text-sm px-2.5 py-0.5 rounded-lg bg-primary-container border border-card-border min-w-[36px] text-center">
+                              {param.value}
+                            </span>
                           </div>
-                        )}
+                        ))}
+                      </div>
                     </div>
 
                     {/* Match Notes / Observations */}
                     {notes && (
-                      <div className="mt-3 pt-2.5 border-t border-slate-200/70 dark:border-slate-700/70 text-xs text-slate-600 dark:text-slate-300 italic flex items-start gap-1.5">
+                      <div className="mt-3 pt-2.5 border-t border-card-border text-xs text-slate-600 dark:text-slate-300 italic flex items-start gap-1.5">
                         <span className="text-slate-400 not-italic text-sm leading-none">&ldquo;</span>
                         <span className="line-clamp-2">{notes}</span>
                         <span className="text-slate-400 not-italic text-sm leading-none">&rdquo;</span>

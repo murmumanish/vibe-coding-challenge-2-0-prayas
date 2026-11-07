@@ -6,7 +6,8 @@ import { toggleSportStatus, addScoreFieldToSport } from "@/services/sport.servic
 
 export const PATCH = withHandler(
   async (request: Request, context?: unknown) => {
-    await requireRole("coach");
+    // Only Academy Owner (Admin) can archive sports or add scoring fields
+    await requireRole("admin");
     const { params } = context as { params: Promise<{ id: string }> };
     const { id } = await params;
 

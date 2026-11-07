@@ -41,7 +41,7 @@ interface OptionalFieldDraft {
   unit: string;
 }
 
-export function SportManager() {
+export function SportManager({ readOnly = false }: { readOnly?: boolean }) {
   const [sports, setSports] = useState<Sport[]>([]);
   const [presets, setPresets] = useState<SportPresetItem[]>([]);
   const [creationMode, setCreationMode] = useState<"preset" | "custom">("preset");
@@ -210,8 +210,22 @@ export function SportManager() {
 
   return (
     <div className="space-y-6">
-      {/* Creation Mode Switcher Card */}
-      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#18202c] p-5 sm:p-6 shadow-xs transition-colors">
+      {readOnly ? (
+        <div className="rounded-2xl border border-blue-200 dark:border-blue-900/60 bg-[#EBF6F9] dark:bg-blue-950/20 p-5 shadow-xs flex items-start gap-3.5">
+          <span className="flex items-center justify-center w-9 h-9 rounded-xl bg-[#ADD8E6] text-slate-900 font-bold shrink-0 text-sm border border-blue-300">
+            ℹ
+          </span>
+          <div>
+            <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+              Catalog Managed by Academy Owner
+            </h2>
+            <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
+              New sports offerings and custom scoring rubrics are configured exclusively through the <span className="font-semibold text-slate-900 dark:text-white">Admin Section</span>. Coaches have read-only access to view active academy sports and scoring criteria below.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#18202c] p-5 sm:p-6 shadow-xs transition-colors">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
           <div>
             <h2 className="text-base font-bold text-slate-900 dark:text-white">
@@ -518,6 +532,7 @@ export function SportManager() {
           </form>
         )}
       </div>
+      )}
 
       {/* Configured Sports Catalog Table */}
       <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#18202c] shadow-xs overflow-hidden transition-colors">
@@ -613,8 +628,9 @@ export function SportManager() {
                     >
                       {sport.isActive ? "Active" : "Archived"}
                     </span>
-                    <button
-                      onClick={() => handleToggleStatus(sport._id)}
+                    {!readOnly && (
+                      <button
+                        onClick={() => handleToggleStatus(sport._id)}
                       className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors ${
                         sport.isActive
                           ? "text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/50"
@@ -623,6 +639,7 @@ export function SportManager() {
                     >
                       {sport.isActive ? "Archive" : "Activate"}
                     </button>
+                    )}
                   </div>
                 </div>
               );

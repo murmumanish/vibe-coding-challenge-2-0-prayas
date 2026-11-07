@@ -48,7 +48,8 @@ export const GET = withHandler(
 
 export const PATCH = withHandler(
   async (_request: Request, context?: unknown) => {
-    await requireRole("coach");
+    // Only Academy Owner (Admin) can toggle player active status
+    await requireRole("admin");
 
     const { params } = context as { params: Promise<{ id: string }> };
     const { id } = await params;

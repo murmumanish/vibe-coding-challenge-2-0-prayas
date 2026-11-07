@@ -26,7 +26,7 @@ export async function verifyPassword(
 export interface TokenPayload {
   userId: string;
   email: string;
-  role: "coach" | "player" | "scout";
+  role: "admin" | "coach" | "player" | "scout";
 }
 
 export async function createToken(payload: TokenPayload): Promise<string> {

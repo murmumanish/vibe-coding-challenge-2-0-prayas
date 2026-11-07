@@ -2,24 +2,14 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { dbConnect } from "@/lib/db";
 import Player from "@/models/Player";
-import {
-  getPlayerAttendanceStats,
-  PlayerMatchScoreItem,
-} from "@/services/player.service";
+import { getPlayerAttendanceStats } from "@/services/player.service";
 import { isReady } from "@/domain/readiness";
 import { meetsAttendanceThreshold } from "@/domain/attendance";
-import { formatISTDate } from "@/lib/utils";
 import {
-  AthleteIcon,
-  SportsIcon,
   AlertIcon,
   CheckCircleIcon,
   TimeIcon,
-  LockIcon,
-  ClipboardIcon,
-  MatchIcon,
   StarIcon,
-  StadiumIcon,
 } from "@/components/Icons";
 
 export default async function PlayerDashboard() {
@@ -46,23 +36,8 @@ export default async function PlayerDashboard() {
     totalPresent: 0,
     totalPercent: 0,
     matchCount: 0,
-    attendances: [] as Array<{
-      _id: unknown;
-      status: "present" | "absent";
-      session: {
-        _id: unknown;
-        dateKey: string;
-        status: "open" | "closed";
-        closedAt?: Date;
-        sport?: {
-          _id: unknown;
-          name: string;
-          slug: string;
-        };
-      };
-      createdAt: Date;
-    }>,
-    matchScores: [] as PlayerMatchScoreItem[],
+    attendances: [] as any[],
+    matchScores: [] as any[],
   };
 
   if (player) {
@@ -153,11 +128,6 @@ export default async function PlayerDashboard() {
         <div className="relative z-10 flex flex-col gap-4 sm:gap-6">
           {/* Top Chips Row */}
           <div className="flex flex-wrap items-center justify-between gap-2.5">
-            {/*<div className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-xs font-bold border border-blue-300/60 text-slate-900 shadow-xs">
-              <AthleteIcon className="w-3.5 h-3.5 text-blue-800" />
-              <span>Dumka Sports Academy &bull; Athlete Portal</span>
-            </div>*/}
-
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-white/80 text-slate-900 border border-blue-300/60">
                 {sportName}
@@ -189,9 +159,6 @@ export default async function PlayerDashboard() {
                 <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight">
                   {playerName}
                 </h1>
-                {/*<p className="text-xs sm:text-sm text-slate-700 mt-0.5">
-                  {player?.age ? `Age: ${player.age} yrs • ` : ""}Registered: {session.email}
-                </p>*/}
               </div>
             </div>
 
@@ -199,7 +166,6 @@ export default async function PlayerDashboard() {
             <div className="sm:self-center">
               {trialReady ? (
                 <div className="inline-flex items-center gap-2 rounded-2xl bg-emerald-100 border border-emerald-300 px-3.5 py-2 text-xs font-bold text-emerald-900 shadow-xs">
-                  {/*<StarIcon className="w-4 h-4 text-emerald-700 shrink-0" />*/}
                   <span>Qualified for Scout Trials</span>
                 </div>
               ) : (
@@ -409,358 +375,6 @@ export default async function PlayerDashboard() {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* ── Practice Attendance History Section ── */}
-      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#18202c] shadow-xs overflow-hidden transition-colors">
-        <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
-          <div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">
-              My Practice Session History
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Official attendance logs recorded by academy coaching staff.
-            </p>
-          </div>
-          <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shrink-0">
-            {stats.totalSessions} Sessions
-          </span>
-        </div>
-
-        {stats.totalSessions === 0 ? (
-          <div className="p-10 sm:p-12 text-center text-slate-400 dark:text-slate-500">
-            <div className="w-12 h-12 mx-auto rounded-2xl bg-[#ADD8E6]/25 dark:bg-[#ADD8E6]/10 text-slate-800 dark:text-[#ADD8E6] flex items-center justify-center mb-3">
-              <ClipboardIcon className="w-6 h-6" />
-            </div>
-            <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-              No practice sessions recorded yet
-            </p>
-            <p className="text-xs text-slate-400 dark:text-slate-500 max-w-sm mx-auto mt-1">
-              When your coach conducts a practice session for {sportName}, your
-              attendance records will appear here automatically.
-            </p>
-          </div>
-        ) : (
-          <>
-            {/* ── Mobile View: Dedicated Session Cards (md:hidden) ── */}
-            <div className="p-3.5 space-y-3 md:hidden">
-              {stats.attendances.map((att) => {
-                const isPresent = att.status === "present";
-                const isClosed = att.session?.status === "closed";
-                const dateStr = att.session?.dateKey
-                  ? formatISTDate(att.session.dateKey)
-                  : "Unknown Date";
-
-                return (
-                  <div
-                    key={String(att._id)}
-                    className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#18202c] p-4 shadow-xs transition-colors"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <span className="text-xs font-bold text-slate-900 dark:text-slate-100 block">
-                          {dateStr}
-                        </span>
-                        <span className="inline-flex items-center px-2 py-0.5 mt-1 rounded-md text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                          {att.session?.sport?.name || sportName}
-                        </span>
-                      </div>
-
-                      <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold shrink-0 ${
-                          isPresent
-                            ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
-                            : "bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800"
-                        }`}
-                      >
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            isPresent ? "bg-emerald-500" : "bg-rose-500"
-                          }`}
-                        />
-                        {isPresent ? "Present" : "Absent"}
-                      </span>
-                    </div>
-
-                    <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px]">
-                      <span className="text-slate-400 dark:text-slate-500">Session State</span>
-                      <span
-                        className={`inline-flex items-center gap-1.5 font-medium ${
-                          isClosed
-                            ? "text-slate-600 dark:text-slate-400"
-                            : "text-emerald-600 dark:text-emerald-400 font-bold"
-                        }`}
-                      >
-                        {isClosed ? (
-                          <>
-                            <LockIcon className="w-3 h-3 text-slate-400" /> Closed & Locked
-                          </>
-                        ) : (
-                          <>
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Open Practice
-                          </>
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* ── Desktop View: Full Table (hidden md:block) ── */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800">
-                <thead className="bg-slate-50/80 dark:bg-slate-800/60">
-                  <tr>
-                    <th className="px-6 py-3.5 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      Session Date
-                    </th>
-                    <th className="px-6 py-3.5 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      Sport
-                    </th>
-                    <th className="px-6 py-3.5 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      My Attendance
-                    </th>
-                    <th className="px-6 py-3.5 text-right text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      Session Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-[#18202c] divide-y divide-slate-100 dark:divide-slate-800">
-                  {stats.attendances.map((att) => {
-                    const isPresent = att.status === "present";
-                    const isClosed = att.session?.status === "closed";
-                    const dateStr = att.session?.dateKey
-                      ? formatISTDate(att.session.dateKey)
-                      : "Unknown Date";
-
-                    return (
-                      <tr
-                        key={String(att._id)}
-                        className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors"
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm font-bold text-slate-900 dark:text-slate-100 block">
-                            {dateStr}
-                          </span>
-                        </td>
-
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
-                            {att.session?.sport?.name || sportName}
-                          </span>
-                        </td>
-
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold ${
-                              isPresent
-                                ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
-                                : "bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800"
-                            }`}
-                          >
-                            <span
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                isPresent ? "bg-emerald-500" : "bg-rose-500"
-                              }`}
-                            />
-                            {isPresent ? "Present" : "Absent"}
-                          </span>
-                        </td>
-
-                        <td className="px-6 py-4 whitespace-nowrap text-right">
-                          <span
-                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                              isClosed
-                                ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
-                                : "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
-                            }`}
-                          >
-                            {isClosed ? (
-                              <>
-                                <LockIcon className="w-3 h-3 text-slate-500" /> Closed &amp; Locked
-                              </>
-                            ) : (
-                              <>
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Open
-                              </>
-                            )}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* ── My Match History & Personal Scores Section ── */}
-      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#18202c] shadow-xs overflow-hidden transition-colors">
-        <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
-          <div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">
-              My Match History &amp; Scores
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Official academy tournament participation and verified player scores.
-            </p>
-          </div>
-          <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shrink-0">
-            {stats.matchScores.length} Matches
-          </span>
-        </div>
-
-        {stats.matchScores.length === 0 ? (
-          <div className="p-10 sm:p-12 text-center text-slate-400 dark:text-slate-500">
-            <div className="w-12 h-12 mx-auto rounded-2xl bg-[#ADD8E6]/25 dark:bg-[#ADD8E6]/10 text-slate-800 dark:text-[#ADD8E6] flex items-center justify-center mb-3">
-              <MatchIcon className="w-6 h-6" />
-            </div>
-            <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-              No official match scores recorded yet
-            </p>
-            <p className="text-xs text-slate-400 dark:text-slate-500 max-w-sm mx-auto mt-1">
-              When you participate in academy matches, coaches record your official score here for scout review.
-            </p>
-          </div>
-        ) : (
-          <>
-            {/* ── Mobile View: Dedicated Match Cards (md:hidden) ── */}
-            <div className="p-3.5 space-y-3 md:hidden">
-              {stats.matchScores.map((score) => {
-                const dateStr = score.match?.dateKey
-                  ? formatISTDate(score.match.dateKey)
-                  : "—";
-
-                return (
-                  <div
-                    key={String(score._id)}
-                    className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#18202c] p-4 shadow-xs transition-colors"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <span className="text-xs font-bold text-slate-900 dark:text-slate-100 block">
-                          Dumka Academy vs {score.match?.opponent || "Opponent"}
-                        </span>
-                        <span className="text-[11px] text-slate-400 dark:text-slate-500">
-                          {dateStr}
-                        </span>
-                      </div>
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                        {score.match?.sport?.name || sportName}
-                      </span>
-                    </div>
-
-                    {/* Score Highlight Box */}
-                    <div className="mt-3 p-3 rounded-xl bg-[#ADD8E6]/20 dark:bg-[#ADD8E6]/10 border border-blue-200/80 dark:border-slate-700 flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                        My Performance Score
-                      </span>
-                      <span className="text-sm font-black text-slate-900 dark:text-slate-100 px-2.5 py-0.5 rounded-lg bg-white dark:bg-[#18202c] shadow-xs border border-slate-200 dark:border-slate-700">
-                        {score.primaryScore}
-                      </span>
-                    </div>
-
-                    {/* Venue & Notes */}
-                    <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 space-y-1 text-xs">
-                      {score.match?.location && (
-                        <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-[11px]">
-                          <StadiumIcon className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                          <span>Venue: {score.match.location}</span>
-                        </div>
-                      )}
-                      {(score.stats as { notes?: string })?.notes && (
-                        <p className="text-[11px] text-slate-600 dark:text-slate-400 italic">
-                          &ldquo;{(score.stats as { notes?: string }).notes}&rdquo;
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* ── Desktop View: Full Table (hidden md:block) ── */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800">
-                <thead className="bg-slate-50/80 dark:bg-slate-800/60">
-                  <tr>
-                    <th className="px-6 py-3.5 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      Match Date
-                    </th>
-                    <th className="px-6 py-3.5 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      Fixture
-                    </th>
-                    <th className="px-6 py-3.5 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      Sport
-                    </th>
-                    <th className="px-6 py-3.5 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      Venue
-                    </th>
-                    <th className="px-6 py-3.5 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      My Score
-                    </th>
-                    <th className="px-6 py-3.5 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                      Notes
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-[#18202c] divide-y divide-slate-100 dark:divide-slate-800">
-                  {stats.matchScores.map((score) => {
-                    const dateStr = score.match?.dateKey
-                      ? formatISTDate(score.match.dateKey)
-                      : "—";
-
-                    return (
-                      <tr
-                        key={String(score._id)}
-                        className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors"
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm font-bold text-slate-900 dark:text-slate-100 block">
-                            {dateStr}
-                          </span>
-                        </td>
-
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                            Dumka Academy vs {score.match?.opponent || "Opponent"}
-                          </span>
-                        </td>
-
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
-                            {score.match?.sport?.name || sportName}
-                          </span>
-                        </td>
-
-                        <td className="px-6 py-4 whitespace-nowrap text-xs text-slate-500 dark:text-slate-400">
-                          {score.match?.location || (
-                            <span className="text-slate-300 dark:text-slate-600 italic">—</span>
-                          )}
-                        </td>
-
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex items-center px-3 py-1 rounded-xl text-xs font-black bg-[#ADD8E6]/30 dark:bg-[#ADD8E6]/15 text-slate-900 dark:text-slate-100 border border-blue-200 dark:border-slate-700">
-                            {score.primaryScore}
-                          </span>
-                        </td>
-
-                        <td className="px-6 py-4 whitespace-nowrap text-xs text-slate-600 dark:text-slate-400">
-                          {(score.stats as { notes?: string })?.notes || (
-                            <span className="text-slate-300 dark:text-slate-600 italic">—</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
       </div>
     </div>
   );

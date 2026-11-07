@@ -58,9 +58,11 @@ export interface PlayerStatsData {
 
 interface PlayersTableProps {
   initialPlayers: Player[];
+  readOnly?: boolean;
+  showSportFilter?: boolean;
 }
 
-export function PlayersTable({ initialPlayers }: PlayersTableProps) {
+export function PlayersTable({ initialPlayers, readOnly = false, showSportFilter = !readOnly }: PlayersTableProps) {
   const [players, setPlayers] = useState<Player[]>(initialPlayers);
   const [search, setSearch] = useState("");
   const [filterSport, setFilterSport] = useState("");
@@ -146,8 +148,9 @@ export function PlayersTable({ initialPlayers }: PlayersTableProps) {
     const matchesSearch =
       player.name.toLowerCase().includes(search.toLowerCase()) ||
       (player.userId?.email || "").toLowerCase().includes(search.toLowerCase()) ||
-      (player.phone || "").toLowerCase().includes(search.toLowerCase());
-    const matchesSport = !filterSport || player.sport?.name === filterSport;
+      (player.phone || "").toLowerCase().includes(search.toLowerCase()) ||
+      (player.sport?.name || "").toLowerCase().includes(search.toLowerCase());
+    const matchesSport = !showSportFilter || !filterSport || player.sport?.name === filterSport;
     return matchesSearch && matchesSport;
   });
 
@@ -168,7 +171,7 @@ export function PlayersTable({ initialPlayers }: PlayersTableProps) {
           />
         </div>
 
-        {sportOptions.length > 0 && (
+        {showSportFilter && sportOptions.length > 0 && (
           <div className="w-full sm:w-56">
             <select
               value={filterSport}
@@ -464,22 +467,28 @@ export function PlayersTable({ initialPlayers }: PlayersTableProps) {
 
             {/* Modal Actions Footer */}
             <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
-              <button
-                type="button"
-                onClick={() => handleToggleActive(selectedPlayer._id)}
-                disabled={togglingActive}
-                className={`py-2 px-4 rounded-xl text-xs font-bold border transition ${
-                  selectedPlayer.isActive
-                    ? "bg-rose-50 text-rose-700 hover:bg-rose-100 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900"
-                    : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900"
-                }`}
-              >
-                {togglingActive
-                  ? "Updating..."
-                  : selectedPlayer.isActive
-                  ? "Deactivate Player"
-                  : "Activate Player"}
-              </button>
+              {readOnly ? (
+                <span className="text-xs text-slate-500 dark:text-slate-400 italic">
+                  Sport assignment &amp; status managed by Academy Owner.
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleToggleActive(selectedPlayer._id)}
+                  disabled={togglingActive}
+                  className={`py-2 px-4 rounded-xl text-xs font-bold border transition ${
+                    selectedPlayer.isActive
+                      ? "bg-rose-50 text-rose-700 hover:bg-rose-100 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900"
+                      : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900"
+                  }`}
+                >
+                  {togglingActive
+                    ? "Updating..."
+                    : selectedPlayer.isActive
+                    ? "Deactivate Player"
+                    : "Activate Player"}
+                </button>
+              )}
 
               <button
                 type="button"

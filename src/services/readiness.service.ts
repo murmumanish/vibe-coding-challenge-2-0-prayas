@@ -22,6 +22,7 @@ export interface PlayerReadinessItem {
 
 export interface ReadinessOptions {
   sportId?: string;
+  sportIds?: string[];
   readyOnly?: boolean;
 }
 
@@ -47,6 +48,8 @@ export async function getReadinessRoster(
   const playerFilter: Record<string, unknown> = { isActive: true };
   if (options?.sportId) {
     playerFilter.sport = options.sportId;
+  } else if (options?.sportIds) {
+    playerFilter.sport = { $in: options.sportIds };
   }
 
   const players = await Player.find(playerFilter)

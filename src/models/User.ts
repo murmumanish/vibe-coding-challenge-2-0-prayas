@@ -1,11 +1,12 @@
 // src/models/User.ts
-import mongoose, { Schema, Document, Model } from "mongoose";
+import mongoose, { Schema, Document, Model, Types } from "mongoose";
 
 export interface IUser extends Document {
   email: string;
   password: string;
   name: string;
-  role: "coach" | "player" | "scout";
+  role: "admin" | "coach" | "player" | "scout";
+  assignedSports?: Types.ObjectId[];
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -25,8 +26,9 @@ const UserSchema = new Schema<IUser>(
     role: {
       type: String,
       required: true,
-      enum: ["coach", "player", "scout"],
+      enum: ["admin", "coach", "player", "scout"],
     },
+    assignedSports: [{ type: Schema.Types.ObjectId, ref: "Sport" }],
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }

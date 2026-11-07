@@ -39,6 +39,46 @@ export function CloseIcon({ className = "w-5 h-5", size, ...props }: IconProps) 
   );
 }
 
+// Brand Logo: Trophy with a star, two-tone (outlined strokes, softly tinted cup, solid star and base)
+export function BrandLogoIcon({ className = "w-5 h-5", size, ...props }: IconProps) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+      width={size}
+      height={size}
+      {...props}
+    >
+      {/* cup, softly tinted */}
+      <path
+        d="M7 3h10v6.5a5 5 0 0 1-10 0V3z"
+        fill="currentColor"
+        fillOpacity={0.15}
+      />
+      {/* handles */}
+      <path d="M7 5H4v2a3 3 0 0 0 3 3" />
+      <path d="M17 5h3v2a3 3 0 0 1-3 3" />
+      {/* stem */}
+      <path d="M12 14.5V18" />
+      {/* solid pedestal */}
+      <path d="M9 18h6l1 3H8z" fill="currentColor" />
+      {/* solid star inside the cup */}
+      <path
+        d="M12 5.7L12.56 7.23L14.19 7.29L12.9 8.29L13.35 9.86L12 8.95L10.65 9.86L11.1 8.29L9.81 7.29L11.44 7.23Z"
+        fill="currentColor"
+        strokeWidth={0.6}
+      />
+    </svg>
+  );
+}
+
 export function StadiumIcon({ className = "w-5 h-5", size, ...props }: IconProps) {
   return (
     <svg
@@ -518,6 +558,23 @@ export function TrashIcon({ className = "w-5 h-5", size, ...props }: IconProps) 
       {...props}
     >
       <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
+    </svg>
+  );
+}
+
+
+export function WhistleIcon({ className = "w-5 h-5", size, ...props }: IconProps) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      width={size}
+      height={size}
+      {...props}
+    >
+      <path d="M8.5 5a4.5 4.5 0 00-4.5 4.5c0 1.9.18 3.5 1.5 4.5V17a2 2 0 002 2h4a2 2 0 002-2v-1.5l5.5-2.5V8h-7.2A4.48 4.48 0 008.5 5zm0 2c1.38 0 2.5 1.12 2.5 2.5S9.88 12 8.5 12 6 10.88 6 9.5 7.12 7 8.5 7z" />
     </svg>
   );
 }

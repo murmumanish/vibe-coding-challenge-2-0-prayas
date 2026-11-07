@@ -20,7 +20,8 @@ export const GET = withHandler(async (request: Request) => {
 });
 
 export const POST = withHandler(async (request: Request) => {
-  await requireRole("coach");
+  // Only Academy Owner (Admin) can add sports
+  await requireRole("admin");
 
   const body = await request.json();
   const parsed = createSportSchema.safeParse(body);

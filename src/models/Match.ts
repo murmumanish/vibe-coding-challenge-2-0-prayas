@@ -23,6 +23,7 @@ const MatchSchema = new Schema<IMatch>(
 );
 
 MatchSchema.index({ dateKey: 1, sport: 1 });
+MatchSchema.index({ dateKey: -1, sport: 1 });
 
 const Match: Model<IMatch> =
   mongoose.models.Match || mongoose.model<IMatch>("Match", MatchSchema);

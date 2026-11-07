@@ -31,7 +31,7 @@ export default function PlayerLoading() {
       </div>
 
       {/* 3 Metric Cards Skeleton */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-5">
         {[...Array(3)].map((_, i) => (
           <div
             key={i}
@@ -48,59 +48,6 @@ export default function PlayerLoading() {
             <Skeleton className="h-3 w-40 mt-3" />
           </div>
         ))}
-      </div>
-
-      {/* Logs & History Split Section Skeleton */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Attendance Log Card Skeleton */}
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#18202c] shadow-xs overflow-hidden">
-          <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-            <div>
-              <Skeleton className="h-5 w-36 rounded-lg mb-1" />
-              <Skeleton className="h-3 w-52 rounded-md" />
-            </div>
-            <Skeleton className="h-6 w-16 rounded-full" />
-          </div>
-          <div className="divide-y divide-slate-100 dark:divide-slate-800">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="p-4 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <Skeleton className="w-9 h-9 rounded-xl" />
-                  <div className="space-y-1">
-                    <Skeleton className="h-4 w-28" />
-                    <Skeleton className="h-3 w-20" />
-                  </div>
-                </div>
-                <Skeleton className="h-6 w-16 rounded-full" />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Match History Card Skeleton */}
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#18202c] shadow-xs overflow-hidden">
-          <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-            <div>
-              <Skeleton className="h-5 w-36 rounded-lg mb-1" />
-              <Skeleton className="h-3 w-52 rounded-md" />
-            </div>
-            <Skeleton className="h-6 w-16 rounded-full" />
-          </div>
-          <div className="divide-y divide-slate-100 dark:divide-slate-800">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="p-4 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <Skeleton className="w-9 h-9 rounded-xl" />
-                  <div className="space-y-1">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-3 w-24" />
-                  </div>
-                </div>
-                <Skeleton className="h-7 w-20 rounded-xl" />
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );

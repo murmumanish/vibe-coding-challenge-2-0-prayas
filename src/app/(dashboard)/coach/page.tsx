@@ -2,19 +2,17 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { dbConnect } from "@/lib/db";
-import Sport from "@/models/Sport";
+import User from "@/models/User";
 import Player from "@/models/Player";
 import Session from "@/models/Session";
 import { getReadinessRoster } from "@/services/readiness.service";
 import Link from "next/link";
 import {
-  StadiumIcon,
   PeopleIcon,
-  SportsIcon,
   ClipboardIcon,
   MatchIcon,
-  StarIcon,
-  AddIcon,
+  SportsIcon,
+  AlertIcon,
 } from "@/components/Icons";
 
 export default async function CoachDashboard() {
@@ -24,14 +22,44 @@ export default async function CoachDashboard() {
   }
 
   await dbConnect();
-  const [activeSportsCount, activePlayersCount, totalSessionsCount, readyPlayers] =
+
+  // Fetch coach and their assigned sports
+  const coachUser = await User.findById(session.userId)
+    .populate("assignedSports", "name slug isActive")
+    .lean();
+
+  const assignedSports = ((coachUser?.assignedSports as any[]) || []).filter(
+    (s) => s && s.isActive !== false
+  );
+  const assignedSportIds = assignedSports.map((s) => s._id);
+
+  const playerFilter: Record<string, unknown> = { isActive: true };
+  const sessionFilter: Record<string, unknown> = {};
+
+  if (assignedSportIds.length > 0) {
+    playerFilter.sport = { $in: assignedSportIds };
+    sessionFilter.sport = { $in: assignedSportIds };
+  } else {
+    // If no sports assigned, coach has 0 players and 0 sessions
+    playerFilter.sport = { $in: [] };
+    sessionFilter.sport = { $in: [] };
+  }
+
+  const [activePlayersCount, totalSessionsCount, allReadyPlayers] =
     await Promise.all([
-      Sport.countDocuments({ isActive: true }),
-      Player.countDocuments({ isActive: true }),
-      Session.countDocuments(),
+      Player.countDocuments(playerFilter),
+      Session.countDocuments(sessionFilter),
       getReadinessRoster({ readyOnly: true }),
     ]);
 
+  const assignedSportIdStrs = assignedSportIds.map((id) => id.toString());
+  const readyPlayers = allReadyPlayers.filter((p: any) => {
+    const sportId =
+      p.player?.sport?._id?.toString() ||
+      p.player?.sport?.toString() ||
+      p.sportId?.toString();
+    return assignedSportIdStrs.includes(sportId);
+  });
   const readyCount = readyPlayers.length;
 
   return (
@@ -39,61 +67,83 @@ export default async function CoachDashboard() {
       {/* Welcome Banner */}
       <div className="rounded-2xl bg-[#ADD8E6] p-6 sm:p-8 shadow-sm relative overflow-hidden border border-blue-200">
         <div className="relative z-10">
-          {/*<div className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-xs font-bold mb-3 border border-blue-300/60 text-blue-950 shadow-xs">
-            <StadiumIcon className="w-3.5 h-3.5 text-blue-800" />
-            <span>Dumka Academy Headquarters</span>
-          </div>*/}
           <h1 className="text-2xl font-black tracking-tight sm:text-4xl text-slate-900">
             Welcome back, Coach!
           </h1>
           <p className="mt-2 max-w-xl text-slate-700 text-xs sm:text-base leading-relaxed">
-            Track daily practice sessions, record official match performance scores, and prepare trial-ready players for scouting teams.
+            Conduct daily training sessions, mark player attendance, record official match scores, and track trial-ready athletes.
           </p>
-
-          {/*<div className="mt-5 flex flex-wrap items-center gap-2.5">
-            <Link
-              href="/coach/sessions"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-slate-900 text-white hover:bg-slate-800 shadow-sm transition-transform active:scale-95"
-            >
-              <ClipboardIcon className="w-4 h-4 text-white" />
-              <span>Open Today&apos;s Session</span>
-            </Link>
-            <Link
-              href="/coach/matches"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-900 hover:bg-slate-50 border border-slate-300/80 shadow-xs transition-transform active:scale-95"
-            >
-              <MatchIcon className="w-4 h-4 text-blue-700" />
-              <span>Record Match Scores</span>
-            </Link>
-
-          </div>*/}
         </div>
       </div>
 
-      {/* Quick Stats Overview */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 lg:grid-cols-6">
-        {/* Active Sports */}
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#18202c] p-4 sm:p-5 shadow-xs transition-colors">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Active Sports
-            </span>
-            {/*<SportsIcon className="w-4 h-4 text-blue-500 dark:text-[#ADD8E6]" />*/}
+      {/* Assigned Sports Section (Read-Only) */}
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#18202c] p-5 sm:p-6 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-4 border-b border-slate-100 dark:border-slate-800">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-[#ADD8E6] text-slate-900 border border-blue-200 font-bold">
+                <SportsIcon className="w-4 h-4 text-slate-900" />
+              </span>
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                Assigned Sports
+              </h2>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Authorized sports disciplines assigned by Academy Owner. Coaches have read-only access and cannot change sports.
+            </p>
           </div>
-          <p className="mt-2 text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{activeSportsCount}</p>
-          <span className="mt-1 text-[11px] text-slate-400 dark:text-slate-500 block">Offered at Academy</span>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-900/40 self-start sm:self-auto">
+            <span>{assignedSports.length} Discipline{assignedSports.length === 1 ? "" : "s"} Assigned</span>
+          </span>
         </div>
 
+        {assignedSports.length === 0 ? (
+          <div className="py-8 text-center">
+            <div className="w-10 h-10 mx-auto rounded-xl bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 flex items-center justify-center mb-2">
+              <AlertIcon className="w-5 h-5" />
+            </div>
+            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              No sports assigned yet
+            </p>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 max-w-md mx-auto">
+              Please contact the Academy Owner to assign sports to your coach profile in the Admin Section.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mt-4">
+            {assignedSports.map((sport: any) => (
+              <div
+                key={sport._id.toString()}
+                className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 flex items-center gap-2.5"
+              >
+                <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#ADD8E6] text-slate-900 font-bold text-xs shrink-0">
+                  {sport.name.charAt(0)}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                    {sport.name}
+                  </p>
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold block">
+                    Assigned &bull; Read-Only
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Quick Stats Overview */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {/* Active Players */}
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#18202c] p-4 sm:p-5 shadow-xs transition-colors">
           <div className="flex items-center justify-between">
             <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Active Players
             </span>
-            {/*<PeopleIcon className="w-4 h-4 text-blue-500 dark:text-blue-400" />*/}
           </div>
           <p className="mt-2 text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{activePlayersCount}</p>
-          <span className="mt-1 text-[11px] text-slate-400 dark:text-slate-500 block">Registered in Academy</span>
+          <span className="mt-1 text-[11px] text-slate-400 dark:text-slate-500 block">In Assigned Sports</span>
         </div>
 
         {/* Practice Sessions */}
@@ -102,7 +152,6 @@ export default async function CoachDashboard() {
             <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Practice Logs
             </span>
-            {/*<ClipboardIcon className="w-4 h-4 text-purple-500 dark:text-purple-400" />*/}
           </div>
           <p className="mt-2 text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{totalSessionsCount}</p>
           <span className="mt-1 text-[11px] text-slate-400 dark:text-slate-500 block">Sessions Conducted</span>
@@ -117,7 +166,6 @@ export default async function CoachDashboard() {
             <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
               Trial Ready
             </span>
-            {/*<StarIcon className="w-4 h-4 text-emerald-500 dark:text-emerald-400 group-hover:scale-110 transition-transform" />*/}
           </div>
           <div className="flex items-baseline justify-between mt-2">
             <p className="mt-2 text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
@@ -126,27 +174,6 @@ export default async function CoachDashboard() {
           </div>
           <span className="mt-1 text-[11px] text-slate-400 dark:text-slate-500 block">
             Qualified for Scouts
-          </span>
-        </Link>
-
-        {/* Add Player Section Card */}
-        <Link
-          href="/coach/players/new"
-          className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#18202c] p-4 sm:p-5 shadow-xs transition-all hover:border-[#ADD8E6] dark:hover:border-slate-700 hover:shadow-md flex flex-col justify-between group active:scale-[0.98]"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Add Player
-            </span>
-            {/*<span className="flex items-center justify-center w-6 h-6 rounded-lg bg-[#ADD8E6]/40 dark:bg-[#ADD8E6]/20 text-slate-900 dark:text-[#ADD8E6] group-hover:scale-110 transition-transform">
-              <AddIcon className="w-3.5 h-3.5" />
-            </span>*/}
-          </div>
-          <p className="mt-2 text-xl sm:text-2xl font-black text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-[#ADD8E6] transition-colors flex items-center justify-between">
-            <span>Register</span>
-          </p>
-          <span className="mt-1 text-[11px] text-slate-400 dark:text-slate-500 block">
-            Enroll New Talent
           </span>
         </Link>
 
@@ -159,9 +186,6 @@ export default async function CoachDashboard() {
             <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
               New Session
             </span>
-            {/*<span className="flex items-center justify-center w-6 h-6 rounded-lg bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 group-hover:scale-110 transition-transform">
-              <ClipboardIcon className="w-3.5 h-3.5" />
-            </span>*/}
           </div>
           <p className="mt-2 text-xl sm:text-2xl font-black text-slate-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors flex items-center justify-between">
             <span>Session</span>
@@ -175,32 +199,23 @@ export default async function CoachDashboard() {
       {/* Primary Actions Grid */}
       <div>
         <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-3 sm:mb-4">
-          Academy Modules
+          Coach Modules
         </h2>
-        <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-3">
           <DashboardCard
             IconComp={PeopleIcon}
-            title="Players"
+            title="Player Roster"
             badge={`${activePlayersCount} active`}
-            description="Register new players and manage player status."
+            description="View registered academy players and performance profiles in your assigned sports."
             href="/coach/players"
-            cta="Manage Players"
-            accent="blue"
-          />
-          <DashboardCard
-            IconComp={SportsIcon}
-            title="Sports Config"
-            badge={`${activeSportsCount} active`}
-            description="Manage sports offerings and academy programs."
-            href="/coach/sports"
-            cta="Configure Sports"
+            cta="View Players"
             accent="blue"
           />
           <DashboardCard
             IconComp={ClipboardIcon}
             title="Practice Sessions"
             badge={`${totalSessionsCount} logged`}
-            description="Open daily sessions, mark attendance, and lock records."
+            description="Open daily sessions, mark attendance, and lock records for your assigned sports."
             href="/coach/sessions"
             cta="Track Attendance"
             accent="purple"
@@ -209,7 +224,7 @@ export default async function CoachDashboard() {
             IconComp={MatchIcon}
             title="Match Records"
             badge="Verified Scores"
-            description="Record matches and player scores for present players."
+            description="Record matches and player scores for present players in your assigned sports."
             href="/coach/matches"
             cta="Record Matches"
             accent="emerald"

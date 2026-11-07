@@ -12,6 +12,7 @@ import { canScoreMatch } from "@/domain/matchEligibility";
 import { validateStats } from "@/domain/stats";
 import { SPORT_PRESETS } from "@/domain/sportPresets";
 import { Types } from "mongoose";
+import { getScopedSportFilter } from "./serviceScope";
 
 export interface CreateMatchInput {
   dateKey: string;
@@ -43,6 +44,22 @@ export async function createMatch(data: CreateMatchInput): Promise<IMatch> {
     throw new AppError("Cannot create a match for an inactive sport", 400);
   }
 
+  // Validate coach is assigned to this sport if coach has assignedSports list
+  if (data.createdBy && Types.ObjectId.isValid(data.createdBy)) {
+    const coachUser = await User.findById(data.createdBy);
+    if (coachUser?.assignedSports && coachUser.assignedSports.length > 0) {
+      const isAssigned = coachUser.assignedSports.some(
+        (id) => id.toString() === data.sportId
+      );
+      if (!isAssigned) {
+        throw new AppError(
+          "Forbidden: You are not assigned to record matches for this sport",
+          403
+        );
+      }
+    }
+  }
+
   const match = await Match.create({
     dateKey: data.dateKey,
     sport: sport._id,
@@ -54,28 +71,73 @@ export async function createMatch(data: CreateMatchInput): Promise<IMatch> {
   return match;
 }
 
+export interface MatchFilterOptions {
+  sportId?: string;
+  sport?: string;
+  dateKey?: string;
+  month?: string;
+}
+
 /**
  * Gets all matches with optional filters and score counts.
+ * Caps at 200 items, sorted by { dateKey: -1, _id: -1 }.
+ * Scoped by role:
+ * - Coach: intersected with assigned sports.
+ * - Player: server returns only matches where the player has a score row.
  */
-export async function getAllMatches(options?: {
-  sportId?: string;
-  dateKey?: string;
-}) {
+export async function getAllMatches(
+  options?: MatchFilterOptions,
+  user?: { userId: string; role: string }
+) {
   await dbConnect();
+  const sportParam = options?.sport || options?.sportId;
+  const { sportFilter, emptyResult } = await getScopedSportFilter(user, sportParam);
+
+  if (emptyResult) {
+    return [];
+  }
+
   const filter: Record<string, unknown> = {};
 
-  if (options?.sportId) {
-    filter.sport = options.sportId;
+  if (sportFilter) {
+    filter.sport = sportFilter;
   }
   if (options?.dateKey) {
     filter.dateKey = options.dateKey;
+  } else if (options?.month) {
+    filter.dateKey = {
+      $gte: `${options.month}-01`,
+      $lte: `${options.month}-31`,
+    };
+  }
+
+  let playerScoreMap: Map<string, { primaryScore: number; stats?: Record<string, unknown> }> | null = null;
+  if (user?.role === "player") {
+    const player = await Player.findOne({ userId: user.userId }).select("_id").lean();
+    if (!player) {
+      return [];
+    }
+    const scores = await MatchScore.find({ player: player._id })
+      .select("match primaryScore stats")
+      .lean();
+    filter._id = { $in: scores.map((s) => s.match) };
+    playerScoreMap = new Map();
+    for (const sc of scores) {
+      if (sc.match) {
+        playerScoreMap.set(sc.match.toString(), {
+          primaryScore: typeof sc.primaryScore === "number" ? sc.primaryScore : 0,
+          stats: (sc.stats as Record<string, unknown>) || {},
+        });
+      }
+    }
   }
 
   void User;
   const matches = await Match.find(filter)
     .populate("sport", "name slug isActive scoreFields")
     .populate("createdBy", "name email")
-    .sort({ dateKey: -1, createdAt: -1 })
+    .sort({ dateKey: -1, _id: -1 })
+    .limit(200)
     .lean();
 
   if (matches.length === 0) {
@@ -114,9 +176,72 @@ export async function getAllMatches(options?: {
     return {
       ...m,
       scoresCount: countMap.get(m._id.toString()) || 0,
+      myScore: playerScoreMap ? playerScoreMap.get(m._id.toString()) || null : undefined,
     };
   });
 }
+
+/**
+ * Returns available months with match counts and the earliest month.
+ * Same role scoping as getAllMatches.
+ */
+export async function getMatchMonths(
+  options?: { sport?: string; sportId?: string },
+  user?: { userId: string; role: string }
+): Promise<{ months: Array<{ month: string; count: number }>; earliestMonth: string | null }> {
+  await dbConnect();
+  const sportParam = options?.sport || options?.sportId;
+  const { sportFilter, emptyResult } = await getScopedSportFilter(user, sportParam);
+
+  if (emptyResult) {
+    return { months: [], earliestMonth: null };
+  }
+
+  const matchFilter: Record<string, unknown> = {
+    dateKey: { $type: "string", $regex: /^\d{4}-\d{2}-\d{2}$/ },
+  };
+
+  if (sportFilter) {
+    matchFilter.sport = sportFilter;
+  }
+
+  if (user?.role === "player") {
+    const player = await Player.findOne({ userId: user.userId }).select("_id").lean();
+    if (!player) {
+      return { months: [], earliestMonth: null };
+    }
+    const scores = await MatchScore.find({ player: player._id }).select("match").lean();
+    matchFilter._id = { $in: scores.map((s) => s.match) };
+  }
+
+  const results = await Match.aggregate<{ _id: string; count: number }>([
+    { $match: matchFilter },
+    {
+      $project: {
+        month: { $substrCP: ["$dateKey", 0, 7] },
+      },
+    },
+    {
+      $group: {
+        _id: "$month",
+        count: { $sum: 1 },
+      },
+    },
+    {
+      $sort: { _id: -1 },
+    },
+  ]);
+
+  const months = results.map((r) => ({
+    month: r._id,
+    count: r.count,
+  }));
+
+  const earliestMonth = months.length > 0 ? months[months.length - 1].month : null;
+
+  return { months, earliestMonth };
+}
+
 
 /**
  * Gets a single match by ID.

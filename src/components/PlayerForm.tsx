@@ -13,7 +13,7 @@ interface Sport {
   isActive: boolean;
 }
 
-export function PlayerForm() {
+export function PlayerForm({ redirectTo = "/admin/students" }: { redirectTo?: string } = {}) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
@@ -95,7 +95,7 @@ export function PlayerForm() {
         return;
       }
 
-      router.push("/coach/players");
+      router.push(redirectTo);
       router.refresh();
     } catch {
       setError("Network error. Please try again.");
@@ -170,7 +170,7 @@ export function PlayerForm() {
           <AlertIcon className="w-4 h-4 shrink-0" />
           <span>
             No active sports found. Please configure a sport in{" "}
-            <a href="/coach/sports" className="underline font-bold">
+            <a href="/admin/sports" className="underline font-bold">
               Sports Settings
             </a>{" "}
             before adding players.
@@ -234,7 +234,7 @@ export function PlayerForm() {
         <Button
           type="button"
           variant="secondary"
-          onClick={() => router.push("/coach/players")}
+          onClick={() => router.push(redirectTo)}
           className="w-full sm:w-auto"
         >
           Cancel

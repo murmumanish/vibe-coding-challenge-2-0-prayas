@@ -20,7 +20,7 @@ export function Button({
 
   const variants = {
     primary:
-      "bg-[#ADD8E6] text-slate-900 hover:bg-[#9cd0e2] active:bg-[#8cc4d8] border border-[#96cce0] shadow-xs focus:ring-[#ADD8E6]",
+      "bg-[#ADD8E6] text-[#0f4c64] hover:bg-[#9cd0e2] active:bg-[#8cc4d8] border border-[#96cce0] shadow-xs focus:ring-[#ADD8E6]",
     secondary:
       "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 focus:ring-slate-400",
     danger: "bg-red-600 text-white hover:bg-red-500 focus:ring-red-600",

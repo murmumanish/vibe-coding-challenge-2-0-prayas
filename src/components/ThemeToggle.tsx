@@ -1,7 +1,8 @@
+// src/components/ThemeToggle.tsx
 "use client";
 
 import { useEffect, useState } from "react";
-import { SunIcon, MoonIcon } from "@/components/Icons";
+import { Sun, Moon } from "lucide-react";
 
 export function ThemeToggle({ className = "" }: { className?: string }) {
   const [isDark, setIsDark] = useState(false);
@@ -9,15 +10,23 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
 
   useEffect(() => {
     setMounted(true);
-    // Read current theme from html class or localStorage
-    const saved = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const activeDark = saved === "dark" || (!saved && prefersDark);
-    setIsDark(activeDark);
-    if (activeDark) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
+    try {
+      const saved = localStorage.getItem("theme");
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const activeDark = saved === "dark" || (!saved && prefersDark);
+      setIsDark(activeDark);
+      if (activeDark) {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+    } catch {
+      try {
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        setIsDark(prefersDark);
+      } catch {
+        setIsDark(false);
+      }
     }
   }, []);
 
@@ -26,16 +35,27 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
     setIsDark(nextDark);
     if (nextDark) {
       document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
+      try {
+        localStorage.setItem("theme", "dark");
+      } catch {}
     } else {
       document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
+      try {
+        localStorage.setItem("theme", "light");
+      } catch {}
     }
   }
 
+  // Before mount, render button with placeholder icon to avoid layout shift and preserve 44x44 tap target
   if (!mounted) {
     return (
-      <div className={`w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 ${className}`} />
+      <button
+        type="button"
+        aria-label="Toggle dark mode"
+        className={`min-w-[44px] min-h-[44px] w-11 h-11 inline-flex items-center justify-center rounded-card border border-card-border bg-card text-foreground transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${className}`}
+      >
+        <span className="w-5 h-5" />
+      </button>
     );
   }
 
@@ -43,19 +63,17 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
     <button
       type="button"
       onClick={toggleTheme}
-      aria-label={isDark ? "Switch to light mode" : "Switch to night mode"}
-      title={isDark ? "Switch to light mode" : "Switch to night mode"}
-      className={`inline-flex items-center justify-center w-9 h-9 rounded-xl border transition-colors ${
-        isDark
-          ? "bg-slate-800/80 border-slate-700 text-amber-400 hover:bg-slate-700 hover:text-amber-300"
-          : "bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200 hover:text-slate-900"
-      } ${className}`}
+      aria-label="Toggle dark mode"
+      title="Toggle dark mode"
+      className={`min-w-[44px] min-h-[44px] w-11 h-11 inline-flex items-center justify-center rounded-card border border-card-border bg-card hover:bg-card-hover text-foreground transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${className}`}
     >
       {isDark ? (
-        <SunIcon className="w-5 h-5 transition-transform duration-200 hover:rotate-45" />
+        <Sun className="w-5 h-5 text-foreground" aria-hidden="true" />
       ) : (
-        <MoonIcon className="w-5 h-5 transition-transform duration-200 hover:-rotate-12" />
+        <Moon className="w-5 h-5 text-foreground" aria-hidden="true" />
       )}
     </button>
   );
 }
+
+export default ThemeToggle;

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  StadiumIcon,
+  BrandLogoIcon,
   AlertIcon,
   EyeIcon,
   EyeOffIcon,
@@ -63,13 +63,13 @@ export default function LoginPage() {
       {/* Academy Brand Header */}
       <div className="text-center mb-6 sm:mb-8">
         <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#ADD8E6] text-slate-900 shadow-md mb-3 border border-blue-200">
-          <StadiumIcon className="w-8 h-8 text-slate-900" />
+          <BrandLogoIcon className="w-8 h-8 text-slate-900" />
         </div>
         <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-          Sports Academy Desk
+          Dumka Sports Academy
         </h1>
         <p className="text-[11px] uppercase tracking-widest text-slate-600 dark:text-slate-300 font-bold mt-1">
-          Dumka Academy Portal
+          Academy Portal
         </p>
       </div>
 

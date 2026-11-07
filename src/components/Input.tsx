@@ -15,7 +15,7 @@ export function Input({ label, error, id, className = "", ...props }: InputProps
       )}
       <input
         id={id}
-        className={`block w-full rounded-xl border px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 sm:text-sm transition ${
+        className={`block w-full rounded-xl border px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 text-foreground shadow-xs placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 sm:text-sm transition ${
           error
             ? "border-red-300 dark:border-red-700 focus:border-red-500 focus:ring-red-500/20"
             : "border-slate-200 dark:border-slate-700 focus:border-[#ADD8E6] focus:ring-[#ADD8E6]/40"

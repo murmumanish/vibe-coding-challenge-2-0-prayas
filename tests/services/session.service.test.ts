@@ -48,6 +48,12 @@ vi.mock("@/models/Attendance", () => ({
   },
 }));
 
+vi.mock("@/models/User", () => ({
+  default: {
+    findById: vi.fn().mockResolvedValue(null),
+  },
+}));
+
 describe("Session Service", () => {
   const sportId = new Types.ObjectId().toString();
   const coachUserId = new Types.ObjectId().toString();

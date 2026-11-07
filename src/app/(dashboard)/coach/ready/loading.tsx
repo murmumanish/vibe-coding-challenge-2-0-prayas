@@ -4,18 +4,14 @@ import { Skeleton, DataTableSkeleton } from "@/components/Skeleton";
 export default function CoachReadyLoading() {
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
-      {/* Header Skeleton */}
+      {/* Header Skeleton without breadcrumb */}
       <div>
-        <div className="flex items-center gap-2 mb-2">
-          <Skeleton className="h-3 w-16" />
-          <Skeleton className="h-3 w-3" />
-          <Skeleton className="h-3 w-20" />
-        </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
+          <Skeleton className="w-8 h-8 rounded-xl shrink-0" />
           <Skeleton className="h-7 w-56 rounded-xl" />
-          <Skeleton className="h-6 w-28 rounded-full" />
+          <Skeleton className="h-6 w-24 rounded-full" />
         </div>
-        <Skeleton className="h-4 w-96 max-w-full rounded-lg mt-2" />
+        <Skeleton className="h-4 w-96 max-w-full rounded-lg mt-1.5" />
       </div>
 
       {/* Filter Bar Skeleton */}

@@ -44,67 +44,41 @@ export function ReadyTable({
 }: ReadyTableProps) {
   const [players] = useState<ReadyPlayerItem[]>(initialPlayers);
   const [search, setSearch] = useState("");
-  const [filterSport, setFilterSport] = useState("");
-
-  const sportOptions = Array.from(
-    new Set(players.map((p) => p.player?.sport?.name).filter(Boolean))
-  );
 
   const filteredPlayers = players.filter((item) => {
-    const matchesSearch =
-      item.player.name.toLowerCase().includes(search.toLowerCase()) ||
-      (item.player.userId?.email || "")
-        .toLowerCase()
-        .includes(search.toLowerCase());
-
-    const matchesSport =
-      !filterSport || item.player.sport?.name === filterSport;
-
-    return matchesSearch && matchesSport;
+    const q = search.toLowerCase();
+    return (
+      item.player.name.toLowerCase().includes(q) ||
+      (item.player.userId?.email || "").toLowerCase().includes(q) ||
+      (item.player.sport?.name || "").toLowerCase().includes(q)
+    );
   });
 
   return (
     <div className="space-y-4">
-      {/* Search & Filter Bar */}
-      <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between bg-white dark:bg-[#18202c] p-3.5 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs transition-colors">
-        <div className="relative flex-1">
+      {/* Search Bar (Only Search Bar, Dropdown Removed) */}
+      <div className="bg-card p-3.5 sm:p-4 rounded-2xl border border-card-border shadow-xs transition-colors">
+        <div className="relative w-full">
           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
             <SearchIcon className="w-4 h-4" />
           </div>
           <input
             type="text"
-            placeholder="Search athletes by name..."
+            placeholder="Search athletes by name, email, or sport..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 pl-10 pr-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#ADD8E6]/40 focus:border-[#ADD8E6] placeholder:text-slate-400 dark:placeholder:text-slate-500"
+            className="w-full rounded-xl border border-card-border bg-slate-50 dark:bg-slate-800/80 pl-10 pr-3.5 py-2 text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary placeholder:text-slate-400 transition-colors"
           />
         </div>
-
-        {sportOptions.length > 0 && (
-          <div className="w-full sm:w-56">
-            <select
-              value={filterSport}
-              onChange={(e) => setFilterSport(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2 text-xs sm:text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#ADD8E6]/40 focus:border-[#ADD8E6] bg-slate-50 dark:bg-slate-800"
-            >
-              <option value="">All Sports ({players.length})</option>
-              {sportOptions.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
       </div>
 
       {/* Players Table */}
       {filteredPlayers.length === 0 ? (
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#18202c] p-12 text-center shadow-xs transition-colors">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-[#ADD8E6]/25 dark:bg-[#ADD8E6]/10 text-slate-800 dark:text-[#ADD8E6] flex items-center justify-center mb-3">
+        <div className="rounded-2xl border border-card-border bg-card p-12 text-center shadow-xs transition-colors">
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-primary-container text-foreground flex items-center justify-center mb-3">
             <InboxIcon className="w-7 h-7" />
           </div>
-          <h3 className="text-base font-bold text-slate-900 dark:text-white">
+          <h3 className="text-base font-bold text-foreground">
             {isScoutView
               ? "No Players are Ready for Trial Yet"
               : "No players match the criteria"}
@@ -122,7 +96,7 @@ export function ReadyTable({
             {filteredPlayers.map(({ player, stats }) => (
               <div
                 key={player._id}
-                className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#18202c] p-4 shadow-xs transition-colors hover:shadow-sm"
+                className="rounded-2xl border border-card-border bg-card p-4 shadow-xs transition-colors hover:shadow-sm"
               >
                 {/* Header: Athlete Avatar + Name + Age + Status */}
                 <div className="flex items-start justify-between gap-3">
@@ -131,7 +105,7 @@ export function ReadyTable({
                       {player.name.charAt(0)}
                     </span>
                     <div className="min-w-0">
-                      <h4 className="text-base font-bold text-slate-900 dark:text-white truncate">
+                      <h4 className="text-base font-bold text-foreground truncate">
                         {player.name}
                       </h4>
                       <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -155,12 +129,12 @@ export function ReadyTable({
 
                 {/* Metrics Strip */}
                 <div className="mt-3.5 pt-3.5 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs">
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-semibold bg-primary-container text-foreground border border-card-border">
                     {player.sport?.name || "Unassigned"}
                   </span>
 
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-slate-900 dark:text-white">
+                    <span className="font-bold text-foreground">
                       {stats.attendancePercent.toFixed(1)}% attendance
                     </span>
                     <span className="text-slate-400 dark:text-slate-500 text-[11px]">
@@ -172,8 +146,8 @@ export function ReadyTable({
                 {/* Footer: Matches Played */}
                 <div className="mt-3.5 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs">
                   <span className="text-slate-500 dark:text-slate-400">Match Experience</span>
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold bg-[#ADD8E6]/25 dark:bg-[#ADD8E6]/15 text-slate-900 dark:text-slate-100 border border-blue-200 dark:border-slate-700">
-                    <MatchIcon className="w-3 h-3 text-blue-700 dark:text-[#ADD8E6]" />
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold bg-primary-container text-foreground border border-card-border">
+                    <MatchIcon className="w-3 h-3 text-primary" />
                     {stats.matchCount} Matches
                   </span>
                 </div>
@@ -182,9 +156,9 @@ export function ReadyTable({
           </div>
 
           {/* ── Desktop View: Full Data Table (hidden md:block) ── */}
-          <div className="hidden md:block rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#18202c] shadow-sm overflow-hidden transition-colors">
+          <div className="hidden md:block rounded-2xl border border-card-border bg-card shadow-sm overflow-hidden transition-colors">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800">
+              <table className="min-w-full divide-y divide-card-border">
                 <thead className="bg-slate-50/80 dark:bg-slate-800/60">
                   <tr>
                     <th className="px-6 py-3.5 text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
@@ -204,11 +178,11 @@ export function ReadyTable({
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white dark:bg-[#18202c] divide-y divide-slate-100 dark:divide-slate-800">
+                <tbody className="bg-card divide-y divide-card-border">
                   {filteredPlayers.map(({ player, stats }) => (
                     <tr
                       key={player._id}
-                      className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors"
+                      className="hover:bg-card-hover transition-colors"
                     >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-3">
@@ -216,7 +190,7 @@ export function ReadyTable({
                             {player.name.charAt(0)}
                           </span>
                           <div>
-                            <span className="text-sm font-bold text-slate-900 dark:text-slate-100 block">
+                            <span className="text-sm font-bold text-foreground block">
                               {player.name}
                             </span>
                             <span className="text-xs text-slate-400 dark:text-slate-500">
@@ -227,14 +201,14 @@ export function ReadyTable({
                       </td>
 
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-primary-container text-foreground border border-card-border">
                           {player.sport?.name || "Unassigned"}
                         </span>
                       </td>
 
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                          <span className="text-sm font-bold text-foreground">
                             {stats.attendancePercent.toFixed(1)}%
                           </span>
                           <span className="text-xs text-slate-400 dark:text-slate-500">
@@ -244,8 +218,8 @@ export function ReadyTable({
                       </td>
 
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#ADD8E6]/25 dark:bg-[#ADD8E6]/15 text-slate-900 dark:text-slate-100 border border-blue-200 dark:border-slate-700">
-                          <MatchIcon className="w-3.5 h-3.5 text-blue-700 dark:text-[#ADD8E6]" />
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary-container text-foreground border border-card-border">
+                          <MatchIcon className="w-3.5 h-3.5 text-primary" />
                           {stats.matchCount} Matches
                         </span>
                       </td>

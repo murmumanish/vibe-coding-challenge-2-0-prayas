@@ -7,6 +7,7 @@ import Attendance from "@/models/Attendance";
 import User from "@/models/User";
 import { AppError } from "@/lib/errors";
 import { Types } from "mongoose";
+import { getScopedSportFilter } from "./serviceScope";
 
 export interface CreateSessionInput {
   dateKey: string;
@@ -16,8 +17,10 @@ export interface CreateSessionInput {
 
 export interface SessionFilterOptions {
   sportId?: string;
+  sport?: string;
   status?: "open" | "closed";
   dateKey?: string;
+  month?: string;
 }
 
 /**
@@ -34,6 +37,22 @@ export async function createSession(data: CreateSessionInput): Promise<ISession>
   }
   if (!sport.isActive) {
     throw new AppError("Cannot create a session for an inactive sport", 400);
+  }
+
+  // Validate coach is assigned to this sport if coach has assignedSports list
+  if (data.createdBy && Types.ObjectId.isValid(data.createdBy)) {
+    const coachUser = await User.findById(data.createdBy);
+    if (coachUser?.assignedSports && coachUser.assignedSports.length > 0) {
+      const isAssigned = coachUser.assignedSports.some(
+        (id) => id.toString() === data.sportId
+      );
+      if (!isAssigned) {
+        throw new AppError(
+          "Forbidden: You are not assigned to conduct practice sessions for this sport",
+          403
+        );
+      }
+    }
   }
 
   // 2. Enforce one session per sport per dayKey
@@ -74,26 +93,62 @@ export async function createSession(data: CreateSessionInput): Promise<ISession>
 
 /**
  * Fetches all sessions with optional filtering and aggregates attendance stats.
+ * Caps at 200 items, sorted by { dateKey: -1, _id: -1 }.
+ * Scoped by role:
+ * - Coach: intersected with assigned sports.
+ * - Player: sessions where player has attendance.
  */
-export async function getAllSessions(options?: SessionFilterOptions) {
+export async function getAllSessions(
+  options?: SessionFilterOptions,
+  user?: { userId: string; role: string }
+) {
   await dbConnect();
+  const sportParam = options?.sport || options?.sportId;
+  const { sportFilter, emptyResult } = await getScopedSportFilter(user, sportParam);
+
+  if (emptyResult) {
+    return [];
+  }
+
   const filter: Record<string, unknown> = {};
 
-  if (options?.sportId) {
-    filter.sport = options.sportId;
+  if (sportFilter) {
+    filter.sport = sportFilter;
   }
   if (options?.status) {
     filter.status = options.status;
   }
   if (options?.dateKey) {
     filter.dateKey = options.dateKey;
+  } else if (options?.month) {
+    filter.dateKey = {
+      $gte: `${options.month}-01`,
+      $lte: `${options.month}-31`,
+    };
+  }
+
+  let playerAttendanceMap: Map<string, "present" | "absent"> | null = null;
+  if (user?.role === "player") {
+    const player = await Player.findOne({ userId: user.userId }).select("_id").lean();
+    if (!player) {
+      return [];
+    }
+    const attendances = await Attendance.find({ player: player._id }).select("session status").lean();
+    filter._id = { $in: attendances.map((a) => a.session) };
+    playerAttendanceMap = new Map();
+    for (const a of attendances) {
+      if (a.session) {
+        playerAttendanceMap.set(a.session.toString(), a.status || "absent");
+      }
+    }
   }
 
   void User;
   const sessions = await Session.find(filter)
     .populate("sport", "name slug isActive")
     .populate("createdBy", "name email")
-    .sort({ dateKey: -1, createdAt: -1 })
+    .sort({ dateKey: -1, _id: -1 })
+    .limit(200)
     .lean();
 
   if (sessions.length === 0) {
@@ -132,8 +187,72 @@ export async function getAllSessions(options?: SessionFilterOptions) {
     return {
       ...s,
       attendanceStats: stats,
+      myStatus: playerAttendanceMap
+        ? playerAttendanceMap.get(s._id.toString()) || "absent"
+        : undefined,
     };
   });
+}
+
+/**
+ * Returns available months with session counts and the earliest month.
+ * Same role scoping as getAllSessions.
+ */
+export async function getSessionMonths(
+  options?: { sport?: string; sportId?: string },
+  user?: { userId: string; role: string }
+): Promise<{ months: Array<{ month: string; count: number }>; earliestMonth: string | null }> {
+  await dbConnect();
+  const sportParam = options?.sport || options?.sportId;
+  const { sportFilter, emptyResult } = await getScopedSportFilter(user, sportParam);
+
+  if (emptyResult) {
+    return { months: [], earliestMonth: null };
+  }
+
+  const matchFilter: Record<string, unknown> = {
+    dateKey: { $type: "string", $regex: /^\d{4}-\d{2}-\d{2}$/ },
+  };
+
+  if (sportFilter) {
+    matchFilter.sport = sportFilter;
+  }
+
+  if (user?.role === "player") {
+    const player = await Player.findOne({ userId: user.userId }).select("_id").lean();
+    if (!player) {
+      return { months: [], earliestMonth: null };
+    }
+    const attendances = await Attendance.find({ player: player._id }).select("session").lean();
+    matchFilter._id = { $in: attendances.map((a) => a.session) };
+  }
+
+  const results = await Session.aggregate<{ _id: string; count: number }>([
+    { $match: matchFilter },
+    {
+      $project: {
+        month: { $substrCP: ["$dateKey", 0, 7] },
+      },
+    },
+    {
+      $group: {
+        _id: "$month",
+        count: { $sum: 1 },
+      },
+    },
+    {
+      $sort: { _id: -1 },
+    },
+  ]);
+
+  const months = results.map((r) => ({
+    month: r._id,
+    count: r.count,
+  }));
+
+  const earliestMonth = months.length > 0 ? months[months.length - 1].month : null;
+
+  return { months, earliestMonth };
 }
 
 /**

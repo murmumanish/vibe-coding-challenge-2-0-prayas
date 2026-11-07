@@ -2,10 +2,25 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* ── Material Design Tokens ─────────────────────────────────── */
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-border: var(--card-border);
+  --color-card-hover: var(--card-hover);
+  --color-primary: var(--primary);
+  --color-main-color: var(--main-color);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-container: var(--primary-container);
+  --color-primary-on-container: var(--primary-on-container);
+  --color-primary-foreground: var(--primary-foreground);
+  --radius-card: var(--radius-card);
+}
+
+/* ── Material & Theme Tokens ─────────────────────────────────── */
 :root {
   --background: #EBF6F9;
-  --foreground: #0f172a;
+  --foreground: #0f4c64;
   --card: #ffffff;
   --card-border: #c8e1e8;
   --card-hover: #dff0f5;
@@ -13,9 +28,10 @@
   --main-color: #ADD8E6;
   --primary-hover: #093344;
   --primary-container: #ADD8E6;
-  --primary-on-container: #0f172a;
+  --primary-on-container: #0f4c64;
+  --primary-foreground: #ffffff;
   --radius-card: 1rem;
-  color-scheme: light dark;
+  color-scheme: light;
 }
 
 :root.dark {
@@ -29,15 +45,17 @@
   --primary-hover: #9cd0e2;
   --primary-container: rgba(173, 216, 230, 0.15);
   --primary-on-container: #ADD8E6;
+  --primary-foreground: #093344;
+  color-scheme: dark;
 }
 
 /* ── Base ──────────────────────────────────────────────────── */
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
-  transition: background-color 0.25s ease, color 0.25s ease;
+  transition: background-color 150ms ease, color 150ms ease;
 }
 
 /* ── Responsive table helpers (Container Queries) ──────────── */

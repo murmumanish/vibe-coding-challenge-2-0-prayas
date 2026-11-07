@@ -7,6 +7,7 @@ import {
   MenuIcon,
   CloseIcon,
   StadiumIcon,
+  BrandLogoIcon,
   DashboardIcon,
   SportsIcon,
   PeopleIcon,
@@ -16,6 +17,7 @@ import {
   ScoutIcon,
   AthleteIcon,
   LogoutIcon,
+  WhistleIcon,
 } from "@/components/Icons";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -23,7 +25,7 @@ interface User {
   id: string;
   name: string;
   email: string;
-  role: "coach" | "player" | "scout";
+  role: "admin" | "coach" | "player" | "scout";
 }
 
 interface NavItem {
@@ -32,9 +34,16 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
 }
 
+const ADMIN_NAV: NavItem[] = [
+  { label: "Dashboard", href: "/admin", icon: DashboardIcon },
+  { label: "Coaches", href: "/admin/coaches", icon: WhistleIcon },
+  { label: "Scouts", href: "/admin/scouts", icon: ScoutIcon },
+  { label: "Sports", href: "/admin/sports", icon: SportsIcon },
+  { label: "Students", href: "/admin/students", icon: PeopleIcon },
+];
+
 const COACH_NAV: NavItem[] = [
   { label: "Dashboard", href: "/coach", icon: DashboardIcon },
-  { label: "Sports", href: "/coach/sports", icon: SportsIcon },
   { label: "Players", href: "/coach/players", icon: PeopleIcon },
   { label: "Sessions", href: "/coach/sessions", icon: ClipboardIcon },
   { label: "Matches", href: "/coach/matches", icon: MatchIcon },
@@ -47,9 +56,12 @@ const SCOUT_NAV: NavItem[] = [
 
 const PLAYER_NAV: NavItem[] = [
   { label: "My Stats", href: "/player", icon: AthleteIcon },
+  { label: "Session History", href: "/player/sessions", icon: ClipboardIcon },
+  { label: "Match History", href: "/player/matches", icon: MatchIcon },
 ];
 
 const ROLE_BADGE: Record<string, string> = {
+  admin: "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950/70 dark:text-amber-300 dark:border-amber-800",
   coach: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-950/70 dark:text-blue-300 dark:border-blue-800",
   scout: "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950/70 dark:text-emerald-300 dark:border-emerald-800",
   player: "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-950/70 dark:text-purple-300 dark:border-purple-800",
@@ -93,7 +105,9 @@ export function Navbar() {
   }
 
   const navLinks =
-    user?.role === "coach"
+    user?.role === "admin"
+      ? ADMIN_NAV
+      : user?.role === "coach"
       ? COACH_NAV
       : user?.role === "scout"
       ? SCOUT_NAV
@@ -102,7 +116,9 @@ export function Navbar() {
       : [];
 
   function isActive(href: string) {
+    if (href === "/admin") return pathname === "/admin";
     if (href === "/coach") return pathname === "/coach";
+    if (href === "/player") return pathname === "/player";
     return pathname.startsWith(href);
   }
 
@@ -130,15 +146,12 @@ export function Navbar() {
               className="flex items-center gap-2.5 group"
             >
               <span className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#ADD8E6] text-slate-900 border border-blue-200 shadow-sm group-hover:scale-105 transition-transform shrink-0">
-                <StadiumIcon className="w-5 h-5 text-slate-900" />
+                <BrandLogoIcon className="w-5 h-5 text-slate-900" />
               </span>
               <div>
                 <span className="font-extrabold text-slate-900 dark:text-white tracking-tight text-sm sm:text-base md:text-lg block leading-none">
-                  Sports Academy
+                  Dumka Sports Academy
                 </span>
-                {/*<span className="text-[10px] uppercase font-bold tracking-widest text-slate-600 dark:text-slate-300 mt-0.5 block leading-none">
-                  Dumka Portal
-                </span>*/}
               </div>
             </Link>
           </div>
@@ -281,7 +294,6 @@ export function Navbar() {
 
             {/* Drawer Footer: Theme Toggle & Sign out */}
             <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
-              {/* Theme Toggle row */}
               <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
                 <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
                   Night Mode
@@ -289,7 +301,6 @@ export function Navbar() {
                 <ThemeToggle />
               </div>
 
-              {/* Sign out */}
               <button
                 type="button"
                 onClick={handleLogout}
@@ -308,11 +319,11 @@ export function Navbar() {
         </div>
       )}
 
-      {/* ── Mobile Bottom Navigation Bar (Thumb reachable, No Emojis, Dark-Mode Ready) ── */}
-      {user?.role === "coach" && (
+      {/* ── Mobile Bottom Navigation Bar (Admin) ── */}
+      {user?.role === "admin" && (
         <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 dark:bg-[#18202c]/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] pb-safe transition-colors">
           <div className="flex items-stretch h-14">
-            {COACH_NAV.filter((link) => link.href !== "/coach/ready").map((link) => {
+            {ADMIN_NAV.map((link) => {
               const active = isActive(link.href);
               const IconComp = link.icon;
               return (
@@ -332,6 +343,75 @@ export function Navbar() {
                     }`}
                   >
                     {link.label === "Dashboard" ? "Home" : link.label}
+                  </span>
+                  {active && (
+                    <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-1 bg-[#ADD8E6] rounded-full" />
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+      )}
+
+      {/* ── Mobile Bottom Navigation Bar (Coach) ── */}
+      {user?.role === "coach" && (
+        <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 dark:bg-[#18202c]/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] pb-safe transition-colors">
+          <div className="flex items-stretch h-14">
+            {COACH_NAV.map((link) => {
+              const active = isActive(link.href);
+              const IconComp = link.icon;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`flex-1 relative flex flex-col items-center justify-center gap-1 transition-colors ${
+                    active
+                      ? "text-slate-900 dark:text-[#ADD8E6]"
+                      : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  <IconComp className={`w-5 h-5 transition-transform ${active ? "scale-110" : ""}`} />
+                  <span
+                    className={`text-[10px] font-bold tracking-tight leading-none ${
+                      active ? "text-slate-900 dark:text-[#ADD8E6]" : "text-slate-500 dark:text-slate-400"
+                    }`}
+                  >
+                    {link.label === "Dashboard" ? "Home" : link.label}
+                  </span>
+                  {active && (
+                    <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-1 bg-[#ADD8E6] rounded-full" />
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+      )}
+      {/* ── Mobile Bottom Navigation Bar (Player) ── */}
+      {user?.role === "player" && (
+        <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 dark:bg-[#18202c]/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] pb-safe transition-colors">
+          <div className="flex items-stretch h-14">
+            {PLAYER_NAV.map((link) => {
+              const active = isActive(link.href);
+              const IconComp = link.icon;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`flex-1 relative flex flex-col items-center justify-center gap-1 transition-colors ${
+                    active
+                      ? "text-slate-900 dark:text-[#ADD8E6]"
+                      : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  <IconComp className={`w-5 h-5 transition-transform ${active ? "scale-110" : ""}`} />
+                  <span
+                    className={`text-[10px] font-bold tracking-tight leading-none ${
+                      active ? "text-slate-900 dark:text-[#ADD8E6]" : "text-slate-500 dark:text-slate-400"
+                    }`}
+                  >
+                    {link.label === "Session History" ? "Sessions" : link.label === "Match History" ? "Matches" : link.label}
                   </span>
                   {active && (
                     <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-1 bg-[#ADD8E6] rounded-full" />

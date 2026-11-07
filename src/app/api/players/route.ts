@@ -6,7 +6,8 @@ import { createPlayerSchema } from "@/lib/validators";
 import { getAllPlayers, createPlayer } from "@/services/player.service";
 
 export const GET = withHandler(async (request: Request) => {
-  await requireRole("coach");
+  // Both coaches and admin can query players roster
+  await requireRole("coach", "admin");
 
   const url = new URL(request.url);
   const sportId = url.searchParams.get("sportId") || undefined;
@@ -17,7 +18,8 @@ export const GET = withHandler(async (request: Request) => {
 });
 
 export const POST = withHandler(async (request: Request) => {
-  await requireRole("coach");
+  // Only Academy Owner (Admin) can register new students/players
+  await requireRole("admin");
 
   const body = await request.json();
   const parsed = createPlayerSchema.safeParse(body);

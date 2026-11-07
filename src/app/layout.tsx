@@ -1,9 +1,11 @@
+// src/app/layout.tsx
 import type { Metadata } from "next";
+import { academy } from "@/lib/academy";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Sports Academy Desk",
-  description: "Track players, attendance, matches, and readiness for your sports academy.",
+  title: academy.name,
+  description: academy.tagline,
 };
 
 const themeInitScript = `
@@ -26,11 +28,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" data-scroll-behavior="smooth" className="h-full antialiased font-sans" suppressHydrationWarning>
+    <html
+      lang="en"
+      data-scroll-behavior="smooth"
+      className="h-full antialiased font-sans"
+      suppressHydrationWarning
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className="min-h-full flex flex-col bg-[#EBF6F9] dark:bg-[#0f141c] text-slate-900 dark:text-slate-100 transition-colors duration-200">
+      <body className="min-h-full flex flex-col bg-background text-foreground transition-[background-color,color] duration-150">
         {children}
       </body>
     </html>

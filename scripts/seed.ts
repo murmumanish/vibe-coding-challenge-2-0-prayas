@@ -25,7 +25,8 @@ const UserSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     password: { type: String, required: true },
     name: { type: String, required: true, trim: true },
-    role: { type: String, required: true, enum: ["coach", "player", "scout"] },
+    role: { type: String, required: true, enum: ["admin", "coach", "player", "scout"] },
+    assignedSports: [{ type: mongoose.Schema.Types.ObjectId, ref: "Sport" }],
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }
@@ -68,41 +69,58 @@ async function seed() {
   await User.deleteMany({});
   await Sport.deleteMany({});
 
-  // ─── Create Coach ─────────────────────────────────────────────────
-  const coachPassword = await bcrypt.hash("coach123", 10);
-  const coach = await User.create({
-    email: "coach@academy.com",
-    password: coachPassword,
-    name: "Head Coach",
-    role: "coach",
+  // ─── Create Admin (Academy Owner) ─────────────────────────────────
+  const adminPassword = await bcrypt.hash("admin123", 10);
+  const admin = await User.create({
+    email: "admin@academy.com",
+    password: adminPassword,
+    name: "Academy Owner",
+    role: "admin",
   });
-  console.log(`✅ Coach created: ${coach.email}`);
-
-  // ─── Create Scout ─────────────────────────────────────────────────
-  const scoutPassword = await bcrypt.hash("scout123", 10);
-  const scout = await User.create({
-    email: "scout@academy.com",
-    password: scoutPassword,
-    name: "Scout One",
-    role: "scout",
-  });
-  console.log(`✅ Scout created: ${scout.email}`);
+  console.log(`✅ Admin created: ${admin.email}`);
 
   // ─── Create 10 Dumka Academy Sports Presets ───────────────────────
+  const createdSports = [];
   for (const preset of SPORT_PRESETS) {
     const primaryLabel =
       preset.scoreFields.find((f) => f.isPrimary)?.label || "Score";
-    await Sport.create({
+    const sport = await Sport.create({
       name: preset.name,
       slug: preset.slug,
       scoreFields: preset.scoreFields,
       isPreset: true,
       isActive: true,
     });
+    createdSports.push(sport);
     console.log(`✅ Sport created: ${preset.name} (Primary: ${primaryLabel})`);
   }
 
+  // ─── Create Coach with Assigned Sports (first 3 sports) ────────────
+  const coachPassword = await bcrypt.hash("coach123", 10);
+  const initialSports = createdSports.slice(0, 3).map((s) => s._id);
+  const coach = await User.create({
+    email: "coach@academy.com",
+    password: coachPassword,
+    name: "Head Coach",
+    role: "coach",
+    assignedSports: initialSports,
+  });
+  console.log(`✅ Coach created: ${coach.email} with ${initialSports.length} assigned sports`);
+
+  // ─── Create Scout ─────────────────────────────────────────────────
+  const scoutPassword = await bcrypt.hash("scout123", 10);
+  const scoutSports = createdSports.slice(0, 2).map((s) => s._id);
+  const scout = await User.create({
+    email: "scout@academy.com",
+    password: scoutPassword,
+    name: "Scout One",
+    role: "scout",
+    assignedSports: scoutSports,
+  });
+  console.log(`✅ Scout created: ${scout.email}`);
+
   console.log("\n🎉 Seed completed successfully!");
+  console.log("   Admin login: admin@academy.com / admin123");
   console.log("   Coach login: coach@academy.com / coach123");
   console.log("   Scout login: scout@academy.com / scout123");
 
